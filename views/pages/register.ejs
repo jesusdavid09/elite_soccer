@@ -189,6 +189,53 @@
 
 
         <!-- ========================================================
+             CÓDIGO DE ENTRENADOR
+        ======================================================== -->
+
+        <div
+          id="coachCodeFields"
+          style="display: none;"
+        >
+
+          <div class="form-section">
+
+            <span class="eyebrow">
+              ACCESO DE ENTRENADOR
+            </span>
+
+            <p class="muted">
+              Introduce el código proporcionado por la administración
+              de Elite Soccer.
+            </p>
+
+          </div>
+
+
+          <label>
+
+            Código de entrenador
+
+            <input
+              type="text"
+              name="coach_code"
+              id="coach_code"
+              value="<%= (typeof form !== 'undefined' && form.coach_code) ? form.coach_code : '' %>"
+              minlength="4"
+              maxlength="50"
+              autocomplete="off"
+              placeholder="Ej: ELITE-COACH-2026"
+            >
+
+            <small class="muted">
+              Este código es necesario para crear una cuenta de entrenador.
+            </small>
+
+          </label>
+
+        </div>
+
+
+        <!-- ========================================================
              FOTO DE PERFIL
         ======================================================== -->
 
@@ -375,7 +422,7 @@
               <option
                 value="left_winger"
                 <%= form && form.position === 'left_winger' ? 'selected' : '' %>
-              >
+                >
                 Extremo izquierdo
               </option>
 
@@ -636,6 +683,12 @@
   const playerFields =
     document.getElementById('playerFields');
 
+  const coachCodeFields =
+    document.getElementById('coachCodeFields');
+
+  const coachCode =
+    document.getElementById('coach_code');
+
   const roleMessageTitle =
     document.getElementById('roleMessageTitle');
 
@@ -680,9 +733,15 @@
     const role = roleSelect.value;
 
 
+    /* ============================================================
+       JUGADOR
+    ============================================================ */
+
     if (role === 'player') {
 
       playerFields.style.display = 'block';
+
+      coachCodeFields.style.display = 'none';
 
       birthDate.required = true;
       position.required = true;
@@ -690,6 +749,9 @@
       dominantFoot.required = true;
       heightCm.required = true;
       weightKg.required = true;
+
+      coachCode.required = false;
+
 
       roleMessageTitle.textContent =
         '⚽ Registro de jugador';
@@ -700,9 +762,15 @@
     }
 
 
+    /* ============================================================
+       ACUDIENTE
+    ============================================================ */
+
     else if (role === 'guardian') {
 
       playerFields.style.display = 'none';
+
+      coachCodeFields.style.display = 'none';
 
       birthDate.required = false;
       position.required = false;
@@ -710,6 +778,9 @@
       dominantFoot.required = false;
       heightCm.required = false;
       weightKg.required = false;
+
+      coachCode.required = false;
+
 
       roleMessageTitle.textContent =
         '👨‍👩‍👦 Registro de acudiente';
@@ -720,9 +791,15 @@
     }
 
 
+    /* ============================================================
+       ENTRENADOR
+    ============================================================ */
+
     else if (role === 'coach') {
 
       playerFields.style.display = 'none';
+
+      coachCodeFields.style.display = 'block';
 
       birthDate.required = false;
       position.required = false;
@@ -731,16 +808,23 @@
       heightCm.required = false;
       weightKg.required = false;
 
+      coachCode.required = true;
+
+
       roleMessageTitle.textContent =
         '📋 Registro de entrenador';
 
       roleMessageText.textContent =
-        'Necesitas el código de entrenador proporcionado por la administración del club.';
+        'Introduce el código de entrenador proporcionado por la administración del club.';
 
     }
 
   }
 
+
+  /* ================================================================
+     CAMBIO DE TIPO DE CUENTA
+  ================================================================ */
 
   if (roleSelect) {
 
@@ -771,7 +855,9 @@
         }
 
 
-        /* Validar tipo */
+        /* ========================================================
+           VALIDAR TIPO
+        ======================================================== */
 
         const allowedTypes = [
           'image/jpeg',
@@ -791,7 +877,9 @@
         }
 
 
-        /* Validar tamaño: 5 MB */
+        /* ========================================================
+           VALIDAR TAMAÑO
+        ======================================================== */
 
         const maxSize =
           5 * 1024 * 1024;
@@ -808,7 +896,9 @@
         }
 
 
-        /* Crear vista previa */
+        /* ========================================================
+           CREAR VISTA PREVIA
+        ======================================================== */
 
         const reader =
           new FileReader();
