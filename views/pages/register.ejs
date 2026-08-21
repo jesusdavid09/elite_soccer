@@ -14,8 +14,14 @@
     <h1>Crear cuenta</h1>
 
     <p class="muted center">
-      Regístrate como jugador o acudiente.
-      Tu cuenta quedará pendiente de aprobación.
+      Regístrate como jugador, acudiente o entrenador.
+      <%-- Los jugadores y acudientes quedan pendientes de aprobación. --%>
+      <span id="approvalMessage">
+        Los jugadores y acudientes quedan pendientes de aprobación.
+      </span>
+      <span id="coachMessage" style="display:none;">
+        Los entrenadores son aprobados automáticamente.
+      </span>
     </p>
 
 
@@ -131,10 +137,60 @@
               👨‍👩‍👦 Acudiente
             </option>
 
+            <option
+              value="coach"
+              <%= form.role === 'coach'
+                ? 'selected'
+                : '' %>
+            >
+              📋 Entrenador
+            </option>
+
           </select>
 
         </label>
 
+
+        <!-- =====================================
+             CÓDIGO DE INVITACIÓN (solo entrenador)
+        ====================================== -->
+
+        <div id="coachCodeContainer" style="display:none;">
+
+          <div class="form-section">
+
+            <span class="eyebrow">
+              VERIFICACIÓN DE ENTRENADOR
+            </span>
+
+            <p class="muted">
+              Ingresa el código de invitación proporcionado
+              por la administración del club.
+            </p>
+
+          </div>
+
+          <label>
+
+            Código de invitación
+
+            <input
+              type="text"
+              name="invitation_code"
+              id="invitation_code"
+              value="<%= form.invitation_code || '' %>"
+              placeholder="Ej: ELITE2026"
+              autocomplete="off"
+            >
+
+            <small class="muted">
+              ⚠️ Este código es confidencial. Solo compártelo con
+              personas autorizadas.
+            </small>
+
+          </label>
+
+        </div>
 
 
         <!-- =====================================
@@ -557,6 +613,15 @@
   const playerFields =
     document.getElementById('playerFields');
 
+  const coachCodeContainer =
+    document.getElementById('coachCodeContainer');
+
+  const approvalMessage =
+    document.getElementById('approvalMessage');
+
+  const coachMessage =
+    document.getElementById('coachMessage');
+
   const birthDate =
     document.getElementById('birth_date');
 
@@ -569,32 +634,59 @@
   const dominantFoot =
     document.getElementById('dominant_foot');
 
+  const invitationCode =
+    document.getElementById('invitation_code');
 
-  function updatePlayerFields() {
 
-    if (roleSelect.value === 'player') {
+  function updateFields() {
+
+    const role = roleSelect.value;
+
+    // ---- JUGADOR ----
+    if (role === 'player') {
 
       playerFields.style.display = 'block';
 
       birthDate.required = true;
-
       position.required = true;
-
       dorsal.required = true;
-
       dominantFoot.required = true;
+
+      approvalMessage.style.display = 'inline';
+      coachMessage.style.display = 'none';
 
     } else {
 
       playerFields.style.display = 'none';
 
       birthDate.required = false;
-
       position.required = false;
-
       dorsal.required = false;
-
       dominantFoot.required = false;
+
+    }
+
+    // ---- ENTRENADOR ----
+    if (role === 'coach') {
+
+      coachCodeContainer.style.display = 'block';
+      invitationCode.required = true;
+
+      approvalMessage.style.display = 'none';
+      coachMessage.style.display = 'inline';
+
+    } else {
+
+      coachCodeContainer.style.display = 'none';
+      invitationCode.required = false;
+
+    }
+
+    // ---- ACUDIENTE ----
+    if (role === 'guardian') {
+
+      approvalMessage.style.display = 'inline';
+      coachMessage.style.display = 'none';
 
     }
 
@@ -603,11 +695,12 @@
 
   roleSelect.addEventListener(
     'change',
-    updatePlayerFields
+    updateFields
   );
 
 
-  updatePlayerFields();
+  // Ejecutar al cargar la página
+  updateFields();
 
 
 </script>

@@ -325,7 +325,6 @@ app.get('/tienda', async (req, res) => {
 app.get('/unete', render('pages/join'));
 
 app.post('/unete', async (req, res) => {
-  // Guardamos la solicitud en announcements (existe en tu SQL)
   await q(
     `
     INSERT INTO announcements (title, message, priority, audience)
@@ -350,7 +349,7 @@ app.get('/login', (req, res) => {
 });
 
 // ============================================================
-// REGISTRO
+// REGISTRO (CON CÓDIGO DE INVITACIÓN PARA ENTRENADORES)
 // ============================================================
 
 app.get('/registro', (req, res) => {
@@ -363,9 +362,14 @@ app.post('/registro', async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
   const confirm = String(req.body.confirm_password || '');
-  const role = req.body.role === 'guardian' ? 'guardian' : 'player';
+  const invitationCode = String(req.body.invitation_code || '').trim();
 
-  // Datos del jugador
+  // 👇 SOLO 3 ROLES: player, guardian, coach
+  const role = ['player', 'guardian', 'coach'].includes(req.body.role) 
+    ? req.body.role 
+    : 'player';
+
+  // Datos del jugador (solo si role = player)
   const dorsalRaw = String(req.body.dorsal || '').trim();
   const position = String(req.body.position || '').trim();
   const dominantFoot = String(req.body.dominant_foot || '').trim();
@@ -373,9 +377,49 @@ app.post('/registro', async (req, res) => {
   const heightRaw = String(req.body.height_cm || '').trim();
   const weightRaw = String(req.body.weight_kg || '').trim();
 
-  const form = { name, email, role, dorsal: dorsalRaw, position, dominant_foot: dominantFoot, birth_date: birthDate, height_cm: heightRaw, weight_kg: weightRaw };
+  const form = {
+    name,
+    email,
+    role,
+    invitation_code: invitationCode,
+    dorsal: dorsalRaw,
+    position,
+    dominant_foot: dominantFoot,
+    birth_date: birthDate,
+    height_cm: heightRaw,
+    weight_kg: weightRaw
+  };
 
-  // Validaciones generales
+  // ============================================================
+  // VALIDACIÓN DE CÓDIGO PARA ENTRENADORES
+  // ============================================================
+
+  if (role === 'coach') {
+    if (!invitationCode) {
+      return res.status(400).render('pages/register', {
+        error: 'Debes ingresar el código de invitación para registrarte como entrenador.',
+        success: null,
+        form
+      });
+    }
+
+    const validCode = await one<{ value: string }>(`
+      SELECT value FROM club_settings WHERE key = 'coach_invitation_code'
+    `);
+
+    if (!validCode || invitationCode !== validCode.value) {
+      return res.status(403).render('pages/register', {
+        error: '❌ Código de invitación incorrecto. Verifica con el administrador.',
+        success: null,
+        form
+      });
+    }
+  }
+
+  // ============================================================
+  // VALIDACIONES GENERALES (para todos los roles)
+  // ============================================================
+
   if (name.length < 3 || name.length > 120) {
     return res.status(400).render('pages/register', {
       error: 'El nombre debe tener entre 3 y 120 caracteres.',
@@ -407,6 +451,10 @@ app.post('/registro', async (req, res) => {
       form
     });
   }
+
+  // ============================================================
+  // VALIDACIONES ESPECÍFICAS PARA JUGADOR
+  // ============================================================
 
   let dorsal: number | null = null;
   let height: number | null = null;
@@ -510,6 +558,10 @@ app.post('/registro', async (req, res) => {
     }
   }
 
+  // ============================================================
+  // GUARDAR EN BASE DE DATOS
+  // ============================================================
+
   try {
     // Verificar email
     const exists = await one<any>(`
@@ -541,19 +593,26 @@ app.post('/registro', async (req, res) => {
 
     const hash = await bcrypt.hash(password, 12);
 
-    // Crear usuario (approved = false por defecto)
+    // 👇 Los entrenadores se aprueban automáticamente (approved = true)
+    // Los jugadores y acudientes quedan pendientes (approved = false)
+    const isCoach = role === 'coach';
+    const approved = isCoach;
+
     const u = await one<any>(
       `
       INSERT INTO users (name, email, password_hash, role, approved)
-      VALUES ($1, $2, $3, $4, false)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING id
       `,
-      [name, email, hash, role]
+      [name, email, hash, role, approved]
     );
 
     if (!u) throw new Error('No se pudo crear el usuario.');
 
-    // Crear perfil de jugador si aplica
+    // ============================================================
+    // CREAR PERFIL DE JUGADOR (si aplica)
+    // ============================================================
+
     if (role === 'player' && category) {
       await q(
         `
@@ -567,11 +626,37 @@ app.post('/registro', async (req, res) => {
       );
     }
 
+    // ============================================================
+    // CREAR PERFIL DE ENTRENADOR (si aplica)
+    // ============================================================
+
+    if (role === 'coach') {
+      await q(
+        `
+        INSERT INTO coaches (user_id, full_name, active)
+        VALUES ($1, $2, true)
+        `,
+        [u.id, name]
+      );
+    }
+
     await audit(u.id, 'Solicitud de registro', 'user', u.id, { role, age, category: category?.name || null });
+
+    // ============================================================
+    // MENSAJE DE ÉXITO (personalizado según rol)
+    // ============================================================
+
+    let successMessage = '';
+
+    if (role === 'coach') {
+      successMessage = '✅ Tu cuenta de entrenador ha sido creada exitosamente. Ya puedes iniciar sesión.';
+    } else {
+      successMessage = 'Tu solicitud fue creada correctamente. Un administrador de Elite Soccer debe aprobar tu cuenta antes de que puedas iniciar sesión.';
+    }
 
     return res.render('pages/register', {
       error: null,
-      success: 'Tu solicitud fue creada correctamente. Un administrador de Elite Soccer debe aprobar tu cuenta antes de que puedas iniciar sesión.',
+      success: successMessage,
       form: {}
     });
   } catch (error) {
@@ -818,6 +903,50 @@ app.get('/jugadores/:id', requireAuth, async (req, res) => {
     player,
     evaluations,
     stats: stats || { matches: 0, goals: 0, assists: 0, mvps: 0 }
+  });
+});
+
+// ============================================================
+// CONFIGURACIÓN - CÓDIGO DE INVITACIÓN PARA ENTRENADORES
+// ============================================================
+
+app.get('/configuracion/entrenadores', requireRole('admin'), async (req, res) => {
+  const code = await one<{ value: string }>(`
+    SELECT value FROM club_settings WHERE key = 'coach_invitation_code'
+  `);
+
+  res.render('pages/coach-config', {
+    code: code?.value || 'No configurado',
+    message: null
+  });
+});
+
+app.post('/configuracion/entrenadores', requireRole('admin'), async (req, res) => {
+  const newCode = String(req.body.code || '').trim();
+
+  if (newCode.length < 4) {
+    const code = await one<{ value: string }>(`
+      SELECT value FROM club_settings WHERE key = 'coach_invitation_code'
+    `);
+
+    return res.render('pages/coach-config', {
+      code: code?.value || 'No configurado',
+      message: 'El código debe tener al menos 4 caracteres.'
+    });
+  }
+
+  await q(
+    `
+    INSERT INTO club_settings (key, value)
+    VALUES ('coach_invitation_code', $1)
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+    `,
+    [newCode]
+  );
+
+  res.render('pages/coach-config', {
+    code: newCode,
+    message: '✅ Código de invitación actualizado correctamente.'
   });
 });
 

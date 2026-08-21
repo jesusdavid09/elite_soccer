@@ -29,11 +29,25 @@
                 Únete a Elite Soccer
             </a>
 
+            <% if (!user) { %>
+                <a class="btn outline" href="/login">
+                    🔐 Acceso
+                </a>
+            <% } else { %>
+                <a class="btn outline" href="/dashboard">
+                    📊 Panel de control
+                </a>
+            <% } %>
+
         </div>
 
     </div>
 
 </section>
+
+<!-- ============================================================ -->
+<!-- PRÓXIMOS PARTIDOS -->
+<!-- ============================================================ -->
 
 <section class="section">
 
@@ -55,37 +69,74 @@
 
     </div>
 
-    <div class="grid cards">
+    <% if (matches && matches.length > 0) { %>
 
-        <% matches.forEach(m => { %>
+        <div class="grid cards">
 
-            <article class="card match">
+            <% matches.forEach(m => { %>
 
-                <span>
-                    <%= m.competition || 'Partido' %>
-                </span>
+                <article class="card match">
 
-                <h3>
-                    ELITE SOCCER
-                    <b>VS</b>
-                    <%= m.opponent %>
-                </h3>
+                    <span>
+                        <%= m.competition || 'Partido' %>
+                    </span>
 
-                <p>
-                    <%= m.match_date.toLocaleDateString('es-CO') %>
-                    ·
-                    <%= String(m.match_time || '').slice(0,5) %>
-                    ·
-                    <%= m.location || 'Por confirmar' %>
-                </p>
+                    <h3>
+                        ELITE SOCCER
+                        <b>VS</b>
+                        <%= m.opponent || 'Por definir' %>
+                    </h3>
 
-            </article>
+                    <p>
+                        <% 
+                            let dateStr = 'Fecha por confirmar';
+                            if (m.match_date) {
+                                try {
+                                    const d = new Date(m.match_date);
+                                    if (!isNaN(d.getTime())) {
+                                        dateStr = d.toLocaleDateString('es-CO');
+                                    }
+                                } catch(e) {}
+                            }
+                        %>
+                        <%= dateStr %>
+                        ·
+                        <% 
+                            let timeStr = 'Hora por confirmar';
+                            if (m.match_time) {
+                                timeStr = String(m.match_time).slice(0,5);
+                            }
+                        %>
+                        <%= timeStr %>
+                        ·
+                        <%= m.location || 'Por confirmar' %>
+                    </p>
 
-        <% }) %>
+                    <% if (m.category_name) { %>
+                        <span class="badge">
+                            <%= m.category_name %>
+                        </span>
+                    <% } %>
 
-    </div>
+                </article>
+
+            <% }) %>
+
+        </div>
+
+    <% } else { %>
+
+        <div class="empty-state">
+            <p>No hay partidos programados próximamente.</p>
+        </div>
+
+    <% } %>
 
 </section>
+
+<!-- ============================================================ -->
+<!-- JUGADORES DESTACADOS -->
+<!-- ============================================================ -->
 
 <section class="section">
 
@@ -101,55 +152,69 @@
 
     </div>
 
-    <div class="grid players">
+    <% if (players && players.length > 0) { %>
 
-        <% players.forEach(p => { %>
+        <div class="grid players">
 
-            <a
-                class="player-card"
-                href="/jugadores/<%= p.id %>"
-            >
+            <% players.forEach(p => { %>
 
-                <div class="player-photo">
+                <a
+                    class="player-card"
+                    href="/jugadores/<%= p.id %>"
+                >
 
-                    <% if (p.photo_url) { %>
+                    <div class="player-photo">
 
-                        <img
-                            src="<%= p.photo_url %>"
-                            alt="<%= p.full_name %>"
-                        >
+                        <% if (p.photo_url) { %>
 
-                    <% } else { %>
+                            <img
+                                src="<%= p.photo_url %>"
+                                alt="<%= p.full_name %>"
+                            >
 
-                        <span>
-                            <%= p.dorsal || '—' %>
-                        </span>
+                        <% } else { %>
 
-                    <% } %>
+                            <span class="dorsal-placeholder">
+                                <%= p.dorsal || '—' %>
+                            </span>
 
-                </div>
+                        <% } %>
 
-                <div>
+                    </div>
 
-                    <strong>
-                        <%= p.full_name %>
-                    </strong>
+                    <div>
 
-                    <small>
-                        #<%= p.dorsal || '—' %>
-                        ·
-                        <%= p.position || 'Jugador' %>
-                    </small>
+                        <strong>
+                            <%= p.full_name || 'Jugador' %>
+                        </strong>
 
-                </div>
+                        <small>
+                            #<%= p.dorsal || '—' %>
+                            ·
+                            <%= p.position || 'Jugador' %>
+                        </small>
 
-            </a>
+                    </div>
 
-        <% }) %>
+                </a>
 
-    </div>
+            <% }) %>
+
+        </div>
+
+    <% } else { %>
+
+        <div class="empty-state">
+            <p>No hay jugadores registrados aún.</p>
+        </div>
+
+    <% } %>
 
 </section>
+
+<!-- ============================================================ -->
+<!-- ÚLTIMAS NOTICIAS -->
+<!-- ============================================================ -->
 
 <section class="section news-strip">
 
@@ -165,32 +230,56 @@
 
     </div>
 
-    <div class="grid cards">
+    <% if (news && news.length > 0) { %>
 
-        <% news.forEach(n => { %>
+        <div class="grid cards">
 
-            <a
-                class="card"
-                href="/noticias/<%= n.slug %>"
-            >
+            <% news.forEach(n => { %>
 
-                <small>
-                    NOTICIA
-                </small>
+                <a
+                    class="card"
+                    href="/noticias/<%= n.slug %>"
+                >
 
-                <h3>
-                    <%= n.title %>
-                </h3>
+                    <small>
+                        NOTICIA
+                    </small>
 
-                <p>
-                    <%= n.excerpt || '' %>
-                </p>
+                    <h3>
+                        <%= n.title || 'Sin título' %>
+                    </h3>
 
-            </a>
+                    <p>
+                        <%= n.excerpt || '' %>
+                    </p>
 
-        <% }) %>
+                    <% if (n.published_at) { 
+                        let dateStr = '';
+                        try {
+                            const d = new Date(n.published_at);
+                            if (!isNaN(d.getTime())) {
+                                dateStr = d.toLocaleDateString('es-CO');
+                            }
+                        } catch(e) {}
+                    %>
+                        <small class="date">
+                            <%= dateStr %>
+                        </small>
+                    <% } %>
 
-    </div>
+                </a>
+
+            <% }) %>
+
+        </div>
+
+    <% } else { %>
+
+        <div class="empty-state">
+            <p>No hay noticias publicadas aún.</p>
+        </div>
+
+    <% } %>
 
 </section>
 
