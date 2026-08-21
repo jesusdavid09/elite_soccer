@@ -35,9 +35,13 @@ export function requireRole(...roles: string[]) {
 }
 
 /**
- * En Elite Soccer el entrenador es el administrador.
+ * En Elite Soccer el entrenador tiene permisos
+ * de administración y no necesita aprobación.
  */
 export function canManage(req: Request) {
     return !!req.session.user &&
-        req.session.user.role === 'coach';
+        (
+            req.session.user.role === 'coach' ||
+            req.session.user.role === 'admin'
+        );
 }

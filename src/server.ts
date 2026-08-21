@@ -394,352 +394,1188 @@ app.post('/unete', async (req, res) => {
 // ============================================================
 
 app.get('/login', (req, res) => {
+
   if (req.session.user) {
     return res.redirect('/dashboard');
   }
 
+  let success: string | null = null;
+
+  if (req.query.registered === 'coach') {
+
+    success =
+      'Cuenta de entrenador creada correctamente. Ya puedes iniciar sesión.';
+
+  }
+
+  if (req.query.registered === 'pending') {
+
+    success =
+      'Cuenta creada correctamente. Tu registro está pendiente de aprobación por parte de Elite Soccer.';
+
+  }
+
   res.render('pages/login', {
     error: null,
-    success: null
+    success
   });
+
 });
 
 // ============================================================
-// REGISTRO (CON CÓDIGO DE INVITACIÓN PARA ENTRENADORES)
+// REGISTRO
 // ============================================================
 
 app.get('/registro', (req, res) => {
-  if (req.session.user) return res.redirect('/dashboard');
-  res.render('pages/register', { error: null, success: null, form: {} });
+  res.render('pages/register', {
+    title: 'Crear cuenta',
+    error: null,
+    success: null,
+    form: {}
+  });
 });
 
-app.post('/registro', async (req, res) => {
+app.post(
+  '/registro',
+  uploadProfile.single('profile_photo'),
+  async (req, res) => {
 
-  const name =
-    String(req.body.name || '').trim();
+    try {
 
-  const email =
-    String(req.body.email || '')
-      .trim()
-      .toLowerCase();
+      // ==========================================================
+      // DATOS BÁSICOS
+      // ==========================================================
 
-  const password =
-    String(req.body.password || '');
+      const name = String(req.body.name || '').trim();
 
-  const confirm =
-    String(req.body.confirm_password || '');
+      const email = String(req.body.email || '')
+        .trim()
+        .toLowerCase();
 
-  const invitationCode =
-    String(req.body.invitation_code || '').trim();
+      const password = String(req.body.password || '');
 
-  const role =
-    ['player', 'guardian', 'coach'].includes(req.body.role)
-      ? req.body.role
-      : 'player';
+      const confirm = String(req.body.confirm_password || '');
 
-  // Datos del jugador (solo si role = player)
-  const dorsalRaw = String(req.body.dorsal || '').trim();
-  const position = String(req.body.position || '').trim();
-  const dominantFoot = String(req.body.dominant_foot || '').trim();
-  const birthDate = String(req.body.birth_date || '').trim();
-  const heightRaw = String(req.body.height_cm || '').trim();
-  const weightRaw = String(req.body.weight_kg || '').trim();
+      const role = [
+        'player',
+        'guardian',
+        'coach'
+      ].includes(req.body.role)
+        ? req.body.role
+        : 'player';
 
-  const form = {
-    name,
-    email,
-    role,
-    invitation_code: invitationCode,
-    dorsal: dorsalRaw,
-    position,
-    dominant_foot: dominantFoot,
-    birth_date: birthDate,
-    height_cm: heightRaw,
-    weight_kg: weightRaw
-  };
 
-  // ============================================================
-// VALIDACIÓN DE CÓDIGO PARA ENTRENADORES
-// ============================================================
+      // ==========================================================
+      // DATOS DEL JUGADOR
+      // ==========================================================
 
-if (role === 'coach') {
+      const dorsalRaw =
+        String(req.body.dorsal || '').trim();
 
-  if (!invitationCode) {
+      const position =
+        String(req.body.position || '').trim();
 
-    return res.status(400).render('pages/register', {
-      title: 'Crear cuenta',
-      error: 'Debes ingresar el código de invitación para registrarte como entrenador.',
-      success: null,
-      form
-    });
+      const dominantFoot =
+        String(req.body.dominant_foot || '').trim();
 
-  }
+      const birthDate =
+        String(req.body.birth_date || '').trim();
 
-  if (invitationCode !== 'EGS-2026-COACH') {
+      const heightRaw =
+        String(req.body.height_cm || '').trim();
 
-    return res.status(403).render('pages/register', {
-      title: 'Crear cuenta',
-      error: '❌ Código de entrenador incorrecto. Verifica con el administrador.',
-      success: null,
-      form
-    });
+      const weightRaw =
+        String(req.body.weight_kg || '').trim();
 
-  }
 
-}
+      // ==========================================================
+      // DATOS DEL ACUDIENTE
+      // ==========================================================
 
-  // ============================================================
-  // VALIDACIONES GENERALES (para todos los roles)
-  // ============================================================
+      const guardianName =
+        String(req.body.guardian_name || '').trim();
 
-  if (name.length < 3 || name.length > 120) {
-    return res.status(400).render('pages/register', {
-      error: 'El nombre debe tener entre 3 y 120 caracteres.',
-      success: null,
-      form
-    });
-  }
+      const guardianEmail =
+        String(req.body.guardian_email || '')
+          .trim()
+          .toLowerCase();
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(403).render('pages/login', {
-  error: 'Tu cuenta está pendiente de aprobación por parte de Elite Soccer.',
-  success: null
-});
-  }
+      const guardianPhone =
+        String(req.body.guardian_phone || '').trim();
 
-  if (password.length < 8) {
-    return res.status(400).render('pages/register', {
-      error: 'La contraseña debe tener al menos 8 caracteres.',
-      success: null,
-      form
-    });
-  }
+      const guardianRelationship =
+        String(req.body.guardian_relationship || '').trim();
 
-  if (password !== confirm) {
-    return res.status(400).render('pages/register', {
-      error: 'Las contraseñas no coinciden.',
-      success: null,
-      form
-    });
-  }
 
-  // ============================================================
-  // VALIDACIONES ESPECÍFICAS PARA JUGADOR
-  // ============================================================
+      // ==========================================================
+      // CÓDIGO DE ENTRENADOR
+      // ==========================================================
 
-  let dorsal: number | null = null;
-  let height: number | null = null;
-  let weight: number | null = null;
-  let age: number | null = null;
-  let category: any = null;
+      const coachCode =
+        String(req.body.coach_code || '').trim();
 
-  if (role === 'player') {
-    if (!dorsalRaw) {
-      return res.status(400).render('pages/register', {
-        error: 'Debes indicar tu dorsal.',
-        success: null,
-        form
-      });
-    }
 
-    dorsal = Number(dorsalRaw);
-    if (!Number.isInteger(dorsal) || dorsal < 1 || dorsal > 99) {
-      return res.status(400).render('pages/register', {
-        error: 'El dorsal debe ser un número entre 1 y 99.',
-        success: null,
-        form
-      });
-    }
+      // ==========================================================
+      // FOTO
+      // ==========================================================
 
-    if (!position) {
-      return res.status(400).render('pages/register', {
-        error: 'Debes seleccionar tu posición.',
-        success: null,
-        form
-      });
-    }
+      const profilePhoto =
+        req.file
+          ? `/uploads/profiles/${req.file.filename}`
+          : null;
 
-    if (!dominantFoot) {
-      return res.status(400).render('pages/register', {
-        error: 'Debes seleccionar tu pierna dominante.',
-        success: null,
-        form
-      });
-    }
 
-    if (!birthDate) {
-      return res.status(400).render('pages/register', {
-        error: 'Debes indicar tu fecha de nacimiento.',
-        success: null,
-        form
-      });
-    }
+      // ==========================================================
+      // FORMULARIO PARA CONSERVAR DATOS
+      // ==========================================================
 
-    age = calculateAge(birthDate);
-    if (age < 12 || age > 18) {
-      return res.status(400).render('pages/register', {
-        error: 'Elite Soccer actualmente registra jugadores entre 12 y 18 años.',
-        success: null,
-        form
-      });
-    }
+      const form = {
+        name,
+        email,
+        role,
+        dorsal: dorsalRaw,
+        position,
+        dominant_foot: dominantFoot,
+        birth_date: birthDate,
+        height_cm: heightRaw,
+        weight_kg: weightRaw,
 
-    if (!heightRaw) {
-      return res.status(400).render('pages/register', {
-        error: 'Debes indicar tu altura.',
-        success: null,
-        form
-      });
-    }
+        guardian_name: guardianName,
+        guardian_email: guardianEmail,
+        guardian_phone: guardianPhone,
+        guardian_relationship: guardianRelationship
+      };
 
-    if (!weightRaw) {
-      return res.status(400).render('pages/register', {
-        error: 'Debes indicar tu peso.',
-        success: null,
-        form
-      });
-    }
 
-    height = Number(heightRaw);
-    weight = Number(weightRaw);
+      // ==========================================================
+      // VALIDAR NOMBRE
+      // ==========================================================
 
-    if (!Number.isFinite(height) || height < 100 || height > 230) {
-      return res.status(400).render('pages/register', {
-        error: 'La altura debe estar entre 100 y 230 cm.',
-        success: null,
-        form
-      });
-    }
+      if (name.length < 3 || name.length > 120) {
 
-    if (!Number.isFinite(weight) || weight < 20 || weight > 180) {
-      return res.status(400).render('pages/register', {
-        error: 'El peso debe estar entre 20 y 180 kg.',
-        success: null,
-        form
-      });
-    }
+        return res.status(400).render(
+          'pages/register',
+          {
+            title: 'Crear cuenta',
+            error:
+              'El nombre debe tener entre 3 y 120 caracteres.',
+            success: null,
+            form
+          }
+        );
 
-    category = await getCategoryByAge(age);
-    if (!category) {
-      return res.status(500).render('pages/register', {
-        error: `No existe una categoría activa para la edad ${age}. Verifica la tabla categories.`,
-        success: null,
-        form
-      });
-    }
-  }
-
-  // ============================================================
-  // GUARDAR EN BASE DE DATOS
-  // ============================================================
-
-  try {
-    // Verificar email
-    const exists = await one<any>(`
-      SELECT id FROM users WHERE lower(email) = lower($1)
-    `, [email]);
-
-    if (exists) {
-      return res.status(409).render('pages/register', {
-        error: 'Ya existe una cuenta con ese correo.',
-        success: null,
-        form
-      });
-    }
-
-    // Verificar dorsal único (solo si es jugador)
-    if (role === 'player' && dorsal !== null) {
-      const dorsalExists = await one<any>(`
-        SELECT id FROM players WHERE dorsal = $1 AND active = true LIMIT 1
-      `, [dorsal]);
-
-      if (dorsalExists) {
-        return res.status(409).render('pages/register', {
-          error: 'Ese dorsal ya está siendo utilizado por otro jugador.',
-          success: null,
-          form
-        });
       }
-    }
 
-    const hash = await bcrypt.hash(password, 12);
 
-    // 👇 Los entrenadores se aprueban automáticamente (approved = true)
-    // Los jugadores y acudientes quedan pendientes (approved = false)
-    const isCoach = role === 'coach';
-    const approved = isCoach;
+      // ==========================================================
+      // VALIDAR EMAIL
+      // ==========================================================
 
-    const u = await one<any>(
-      `
-      INSERT INTO users (name, email, password_hash, role, approved)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id
-      `,
-      [name, email, hash, role, approved]
-    );
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
 
-    if (!u) throw new Error('No se pudo crear el usuario.');
+        return res.status(400).render(
+          'pages/register',
+          {
+            title: 'Crear cuenta',
+            error:
+              'Introduce un correo electrónico válido.',
+            success: null,
+            form
+          }
+        );
 
-    // ============================================================
-    // CREAR PERFIL DE JUGADOR (si aplica)
-    // ============================================================
+      }
 
-    if (role === 'player' && category) {
-      await q(
+
+      // ==========================================================
+      // VALIDAR CONTRASEÑA
+      // ==========================================================
+
+      if (password.length < 8) {
+
+        return res.status(400).render(
+          'pages/register',
+          {
+            title: 'Crear cuenta',
+            error:
+              'La contraseña debe tener al menos 8 caracteres.',
+            success: null,
+            form
+          }
+        );
+
+      }
+
+
+      if (password !== confirm) {
+
+        return res.status(400).render(
+          'pages/register',
+          {
+            title: 'Crear cuenta',
+            error:
+              'Las contraseñas no coinciden.',
+            success: null,
+            form
+          }
+        );
+
+      }
+
+
+      // ==========================================================
+      // COMPROBAR EMAIL
+      // ==========================================================
+
+      const exists = await one<any>(
         `
-        INSERT INTO players (
-          user_id, full_name, dorsal, position, dominant_foot,
-          birth_date, height_cm, weight_kg, category_id, active, approved
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, false)
+        SELECT id
+        FROM users
+        WHERE lower(email) = lower($1)
+        LIMIT 1
         `,
-        [u.id, name, dorsal, position, dominantFoot, birthDate, height, weight, category.id]
+        [email]
       );
-    }
 
-    // ============================================================
-    // CREAR PERFIL DE ENTRENADOR (si aplica)
-    // ============================================================
 
-    if (role === 'coach') {
-      await q(
-        `
-        INSERT INTO coaches (user_id, full_name, active)
-        VALUES ($1, $2, true)
-        `,
-        [u.id, name]
+      if (exists) {
+
+        return res.status(409).render(
+          'pages/register',
+          {
+            title: 'Crear cuenta',
+            error:
+              'Ya existe una cuenta con ese correo.',
+            success: null,
+            form
+          }
+        );
+
+      }
+
+
+      // ==========================================================
+      // VARIABLES
+      // ==========================================================
+
+      let dorsal: number | null = null;
+
+      let height: number | null = null;
+
+      let weight: number | null = null;
+
+      let age: number | null = null;
+
+      let category: any = null;
+
+
+      // ==========================================================
+      // REGISTRO DE JUGADOR
+      // ==========================================================
+
+      if (role === 'player') {
+
+        // --------------------------------------------------------
+        // DORSAL
+        // --------------------------------------------------------
+
+        if (!dorsalRaw) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error: 'Debes indicar tu dorsal.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        dorsal = Number(dorsalRaw);
+
+
+        if (
+          !Number.isInteger(dorsal) ||
+          dorsal < 1 ||
+          dorsal > 99
+        ) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'El dorsal debe estar entre 1 y 99.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        // --------------------------------------------------------
+        // POSICIÓN
+        // --------------------------------------------------------
+
+        const validPositions = [
+          'goalkeeper',
+          'defender',
+          'right_back',
+          'left_back',
+          'central_midfielder',
+          'attacking_midfielder',
+          'defensive_midfielder',
+          'right_midfielder',
+          'left_midfielder',
+          'right_winger',
+          'left_winger',
+          'striker',
+          'false_nine'
+        ];
+
+
+        if (!validPositions.includes(position)) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Debes seleccionar una posición válida.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        // --------------------------------------------------------
+        // PIERNA
+        // --------------------------------------------------------
+
+        const validFeet = [
+          'right',
+          'left',
+          'ambidextrous'
+        ];
+
+
+        if (!validFeet.includes(dominantFoot)) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Debes seleccionar tu pierna dominante.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        // --------------------------------------------------------
+        // FECHA
+        // --------------------------------------------------------
+
+        if (!birthDate) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Debes indicar tu fecha de nacimiento.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        const parsedBirth =
+          new Date(`${birthDate}T00:00:00`);
+
+
+        if (Number.isNaN(parsedBirth.getTime())) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'La fecha de nacimiento no es válida.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        age = calculateAge(birthDate);
+
+
+        if (age < 12 || age > 18) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Elite Soccer actualmente registra jugadores entre 12 y 18 años.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        // --------------------------------------------------------
+        // ALTURA
+        // --------------------------------------------------------
+
+        if (!heightRaw) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error: 'Debes indicar tu altura.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        height = Number(heightRaw);
+
+
+        if (
+          !Number.isFinite(height) ||
+          height < 100 ||
+          height > 230
+        ) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'La altura debe estar entre 100 y 230 cm.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        // --------------------------------------------------------
+        // PESO
+        // --------------------------------------------------------
+
+        if (!weightRaw) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error: 'Debes indicar tu peso.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        weight = Number(weightRaw);
+
+
+        if (
+          !Number.isFinite(weight) ||
+          weight < 20 ||
+          weight > 180
+        ) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'El peso debe estar entre 20 y 180 kg.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        // --------------------------------------------------------
+        // CATEGORÍA
+        // --------------------------------------------------------
+
+        category =
+          await getCategoryByAge(age);
+
+
+        if (!category) {
+
+          return res.status(500).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                `No existe una categoría activa para la edad ${age}.`,
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        // --------------------------------------------------------
+        // ACUDIENTE
+        // --------------------------------------------------------
+
+        if (!guardianName) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Debes indicar el nombre del padre, madre o tutor.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        if (!guardianRelationship) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Debes indicar el parentesco del acudiente.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        if (!guardianPhone) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Debes indicar el teléfono del acudiente.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        if (!guardianEmail) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Debes indicar el correo del acudiente.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        if (
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+            guardianEmail
+          )
+        ) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'El correo del acudiente no es válido.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        // --------------------------------------------------------
+        // DORSAL ÚNICO
+        // --------------------------------------------------------
+
+        const dorsalExists =
+          await one<any>(
+            `
+            SELECT id
+            FROM players
+            WHERE dorsal = $1
+              AND active = true
+            LIMIT 1
+            `,
+            [dorsal]
+          );
+
+
+        if (dorsalExists) {
+
+          return res.status(409).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Ese dorsal ya está siendo utilizado por otro jugador.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+      }
+
+
+      // ==========================================================
+      // REGISTRO DE ACUDIENTE
+      // ==========================================================
+
+      if (role === 'guardian') {
+
+        if (!guardianPhone) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Debes indicar el teléfono del acudiente.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        if (!guardianRelationship) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Debes indicar el parentesco.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+      }
+
+
+      // ==========================================================
+      // REGISTRO DE ENTRENADOR
+      // ==========================================================
+
+      if (role === 'coach') {
+
+        if (!coachCode) {
+
+          return res.status(400).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'Debes introducir el código secreto de entrenador.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+
+        const storedCode =
+          await one<{ value: string }>(
+            `
+            SELECT value
+            FROM club_settings
+            WHERE key = 'coach_invitation_code'
+            LIMIT 1
+            `
+          );
+
+
+        if (
+          !storedCode ||
+          storedCode.value !== coachCode
+        ) {
+
+          return res.status(403).render(
+            'pages/register',
+            {
+              title: 'Crear cuenta',
+              error:
+                'El código secreto de entrenador es incorrecto.',
+              success: null,
+              form
+            }
+          );
+
+        }
+
+      }
+
+
+      // ==========================================================
+      // CREAR HASH
+      // ==========================================================
+
+      const hash =
+        await bcrypt.hash(password, 12);
+
+
+      // ==========================================================
+      // APROBACIÓN
+      // ==========================================================
+
+      const approved =
+        role === 'coach';
+
+
+      // ==========================================================
+      // CREAR USUARIO
+      // ==========================================================
+
+      const u =
+        await one<any>(
+          `
+          INSERT INTO users
+          (
+            name,
+            email,
+            password_hash,
+            role,
+            approved,
+            active
+          )
+          VALUES
+          (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            true
+          )
+          RETURNING id
+          `,
+          [
+            name,
+            email,
+            hash,
+            role,
+            approved
+          ]
+        );
+
+
+      if (!u) {
+        throw new Error(
+          'No se pudo crear el usuario.'
+        );
+      }
+
+
+      // ==========================================================
+      // CREAR ENTRENADOR
+      // ==========================================================
+
+      if (role === 'coach') {
+
+        await q(
+          `
+          INSERT INTO coaches
+          (
+            user_id,
+            full_name,
+            photo_url,
+            active
+          )
+          VALUES
+          (
+            $1,
+            $2,
+            $3,
+            true
+          )
+          `,
+          [
+            u.id,
+            name,
+            profilePhoto
+          ]
+        );
+
+      }
+
+
+      // ==========================================================
+      // CREAR ACUDIENTE
+      // ==========================================================
+
+      if (role === 'guardian') {
+
+        await q(
+          `
+          INSERT INTO guardians
+          (
+            user_id,
+            full_name,
+            relationship,
+            phone
+          )
+          VALUES
+          (
+            $1,
+            $2,
+            $3,
+            $4
+          )
+          `,
+          [
+            u.id,
+            name,
+            guardianRelationship,
+            guardianPhone
+          ]
+        );
+
+      }
+
+
+      // ==========================================================
+      // CREAR JUGADOR
+      // ==========================================================
+
+      if (role === 'player') {
+
+        // --------------------------------------------------------
+        // BUSCAR O CREAR ACUDIENTE
+        // --------------------------------------------------------
+
+        let guardianUser =
+          await one<any>(
+            `
+            SELECT id
+            FROM users
+            WHERE lower(email) = lower($1)
+              AND role = 'guardian'
+            LIMIT 1
+            `,
+            [guardianEmail]
+          );
+
+
+        // --------------------------------------------------------
+        // SI EL ACUDIENTE NO EXISTE,
+        // CREAR CUENTA AUTOMÁTICAMENTE
+        // --------------------------------------------------------
+
+        if (!guardianUser) {
+
+          const guardianPassword =
+            crypto.randomBytes(18).toString('hex');
+
+
+          const guardianHash =
+            await bcrypt.hash(
+              guardianPassword,
+              12
+            );
+
+
+          guardianUser =
+            await one<any>(
+              `
+              INSERT INTO users
+              (
+                name,
+                email,
+                password_hash,
+                role,
+                approved,
+                active
+              )
+              VALUES
+              (
+                $1,
+                $2,
+                $3,
+                'guardian',
+                false,
+                true
+              )
+              RETURNING id
+              `,
+              [
+                guardianName,
+                guardianEmail,
+                guardianHash
+              ]
+            );
+
+
+          if (!guardianUser) {
+            throw new Error(
+              'No se pudo crear la cuenta del acudiente.'
+            );
+          }
+
+
+          await q(
+            `
+            INSERT INTO guardians
+            (
+              user_id,
+              full_name,
+              relationship,
+              phone
+            )
+            VALUES
+            (
+              $1,
+              $2,
+              $3,
+              $4
+            )
+            `,
+            [
+              guardianUser.id,
+              guardianName,
+              guardianRelationship,
+              guardianPhone
+            ]
+          );
+
+        }
+
+
+        // --------------------------------------------------------
+        // CREAR JUGADOR
+        // --------------------------------------------------------
+
+        await q(
+          `
+          INSERT INTO players
+          (
+            user_id,
+            guardian_id,
+            full_name,
+            dorsal,
+            position,
+            dominant_foot,
+            birth_date,
+            height_cm,
+            weight_kg,
+            category_id,
+            photo_url,
+            active,
+            approved
+          )
+          VALUES
+          (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10,
+            $11,
+            true,
+            false
+          )
+          `,
+          [
+            u.id,
+            guardianUser.id,
+            name,
+            dorsal,
+            position,
+            dominantFoot,
+            birthDate,
+            height,
+            weight,
+            category.id,
+            profilePhoto
+          ]
+        );
+
+      }
+
+
+      // ==========================================================
+      // AUDITORÍA
+      // ==========================================================
+
+      await audit(
+        u.id,
+        'Crear cuenta',
+        'user',
+        u.id,
+        {
+          role,
+          age,
+          category: category?.name || null,
+          profile_photo: profilePhoto || null
+        }
       );
+
+
+      // ==========================================================
+      // REDIRECCIÓN
+      // ==========================================================
+
+      if (role === 'coach') {
+
+        return res.redirect(
+          '/login?registered=coach'
+        );
+
+      }
+
+
+      return res.redirect(
+        '/login?registered=pending'
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        'Error en registro:',
+        error
+      );
+
+
+      // ----------------------------------------------------------
+      // BORRAR FOTO SI FALLÓ EL REGISTRO
+      // ----------------------------------------------------------
+
+      if (req.file) {
+
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch {}
+
+      }
+
+
+      return res.status(500).render(
+        'pages/register',
+        {
+          title: 'Crear cuenta',
+
+          error:
+            'No se pudo crear la cuenta. Inténtalo nuevamente.',
+
+          success: null,
+
+          form: {
+            name:
+              String(req.body.name || '').trim(),
+
+            email:
+              String(req.body.email || '')
+                .trim()
+                .toLowerCase(),
+
+            role:
+              req.body.role || 'player',
+
+            dorsal:
+              String(req.body.dorsal || '').trim(),
+
+            position:
+              String(req.body.position || '').trim(),
+
+            dominant_foot:
+              String(req.body.dominant_foot || '').trim(),
+
+            birth_date:
+              String(req.body.birth_date || '').trim(),
+
+            height_cm:
+              String(req.body.height_cm || '').trim(),
+
+            weight_kg:
+              String(req.body.weight_kg || '').trim(),
+
+            guardian_name:
+              String(req.body.guardian_name || '').trim(),
+
+            guardian_email:
+              String(req.body.guardian_email || '')
+                .trim()
+                .toLowerCase(),
+
+            guardian_phone:
+              String(req.body.guardian_phone || '').trim(),
+
+            guardian_relationship:
+              String(
+                req.body.guardian_relationship || ''
+              ).trim()
+          }
+        }
+      );
+
     }
 
-    await audit(u.id, 'Solicitud de registro', 'user', u.id, { role, age, category: category?.name || null });
-
-    // ============================================================
-    // MENSAJE DE ÉXITO (personalizado según rol)
-    // ============================================================
-
-    let successMessage = '';
-
-    if (role === 'coach') {
-      successMessage = '✅ Tu cuenta de entrenador ha sido creada exitosamente. Ya puedes iniciar sesión.';
-    } else {
-      successMessage = 'Tu solicitud fue creada correctamente. Un administrador de Elite Soccer debe aprobar tu cuenta antes de que puedas iniciar sesión.';
-    }
-
-    return res.render('pages/register', {
-      error: null,
-      success: successMessage,
-      form: {}
-    });
-  } catch (error) {
-    console.error('Error en registro:', error);
-    return res.status(500).render('pages/register', {
-      error: 'No se pudo crear la cuenta. Inténtalo nuevamente.',
-      success: null,
-      form
-    });
   }
-});
-
+);
 // ============================================================
 // LOGIN (POST)
 // ============================================================
@@ -751,7 +1587,7 @@ app.post('/login', async (req, res) => {
 
     const u = await one<any>(
       `
-      SELECT id, name, email, password_hash, role, approved, active
+      SELECT id, name, email, password_hash, role, status, approved, active
       FROM users
       WHERE lower(email) = lower($1)
       LIMIT 1
@@ -779,7 +1615,13 @@ app.post('/login', async (req, res) => {
         });
       }
 
-      req.session.user = { id: u.id, name: u.name, email: u.email, role: u.role };
+      req.session.user = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        status: u.status
+      };
       req.session.cookie.maxAge = SESSION_MAX_AGE;
 
       await audit(u.id, 'Inicio de sesión', 'user', u.id);
