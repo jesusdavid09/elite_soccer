@@ -530,22 +530,24 @@ app.post(
       // ==========================================================
 
       const form = {
-        name,
-        email,
-        role,
-        dorsal: dorsalRaw,
-        position,
-        dominant_foot: dominantFoot,
-        birth_date: birthDate,
-        height_cm: heightRaw,
-        weight_kg: weightRaw,
+  name,
+  email,
+  role,
 
-        guardian_name: guardianName,
-        guardian_email: guardianEmail,
-        guardian_phone: guardianPhone,
-        guardian_relationship: guardianRelationship
-      };
+  coach_code: coachCode,
 
+  dorsal: dorsalRaw,
+  position,
+  dominant_foot: dominantFoot,
+  birth_date: birthDate,
+  height_cm: heightRaw,
+  weight_kg: weightRaw,
+
+  guardian_name: guardianName,
+  guardian_email: guardianEmail,
+  guardian_phone: guardianPhone,
+  guardian_relationship: guardianRelationship
+};
 
       // ==========================================================
       // VALIDAR NOMBRE
@@ -1534,6 +1536,9 @@ app.post(
 
             role:
               req.body.role || 'player',
+
+              coach_code:
+  String(req.body.coach_code || '').trim(),
 
             dorsal:
               String(req.body.dorsal || '').trim(),

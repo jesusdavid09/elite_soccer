@@ -61,7 +61,6 @@
       id="registerForm"
     >
 
-
       <!-- =================================================
            DATOS DE CUENTA
       ================================================== -->
@@ -72,11 +71,9 @@
           Datos de cuenta
         </h3>
 
-
         <!-- NOMBRE -->
 
         <label>
-
           Nombre completo
 
           <input
@@ -89,14 +86,12 @@
             autocomplete="name"
             required
           >
-
         </label>
 
 
         <!-- EMAIL -->
 
         <label>
-
           Correo electrónico
 
           <input
@@ -107,14 +102,12 @@
             autocomplete="email"
             required
           >
-
         </label>
 
 
         <!-- TIPO DE CUENTA -->
 
         <label>
-
           Tipo de cuenta
 
           <select
@@ -130,14 +123,12 @@
               🧑‍⚽ Jugador
             </option>
 
-
             <option
               value="guardian"
               <%= form?.role === 'guardian' ? 'selected' : '' %>
             >
               👨‍👩‍👧 Acudiente
             </option>
-
 
             <option
               value="coach"
@@ -147,14 +138,12 @@
             </option>
 
           </select>
-
         </label>
 
 
         <!-- CONTRASEÑA -->
 
         <label>
-
           Contraseña
 
           <input
@@ -166,14 +155,12 @@
             placeholder="Mínimo 8 caracteres"
             required
           >
-
         </label>
 
 
         <!-- CONFIRMAR CONTRASEÑA -->
 
         <label>
-
           Confirmar contraseña
 
           <input
@@ -185,11 +172,9 @@
             placeholder="Repite tu contraseña"
             required
           >
-
         </label>
 
       </div>
-
 
 
       <!-- =================================================
@@ -214,7 +199,6 @@
         <!-- DORSAL -->
 
         <label>
-
           Número de camiseta
 
           <input
@@ -225,14 +209,12 @@
             max="99"
             placeholder="Ej: 10"
           >
-
         </label>
 
 
         <!-- POSICIÓN -->
 
         <label>
-
           Posición
 
           <select
@@ -243,14 +225,12 @@
               Selecciona tu posición
             </option>
 
-
             <option
               value="goalkeeper"
               <%= form?.position === 'goalkeeper' ? 'selected' : '' %>
             >
               Arquero
             </option>
-
 
             <option
               value="defender"
@@ -259,14 +239,12 @@
               Defensor central
             </option>
 
-
             <option
               value="right_back"
               <%= form?.position === 'right_back' ? 'selected' : '' %>
             >
               Lateral derecho
             </option>
-
 
             <option
               value="left_back"
@@ -275,14 +253,12 @@
               Lateral izquierdo
             </option>
 
-
             <option
               value="defensive_midfielder"
               <%= form?.position === 'defensive_midfielder' ? 'selected' : '' %>
             >
               Medio centro defensivo
             </option>
-
 
             <option
               value="central_midfielder"
@@ -291,14 +267,12 @@
               Medio centro
             </option>
 
-
             <option
               value="attacking_midfielder"
               <%= form?.position === 'attacking_midfielder' ? 'selected' : '' %>
             >
               Medio centro ofensivo
             </option>
-
 
             <option
               value="right_midfielder"
@@ -307,14 +281,12 @@
               Medio centro derecho
             </option>
 
-
             <option
               value="left_midfielder"
               <%= form?.position === 'left_midfielder' ? 'selected' : '' %>
             >
               Medio centro izquierdo
             </option>
-
 
             <option
               value="right_winger"
@@ -323,14 +295,12 @@
               Extremo derecho
             </option>
 
-
             <option
               value="left_winger"
               <%= form?.position === 'left_winger' ? 'selected' : '' %>
-              >
+            >
               Extremo izquierdo
             </option>
-
 
             <option
               value="striker"
@@ -338,7 +308,6 @@
             >
               Delantero
             </option>
-
 
             <option
               value="false_nine"
@@ -348,24 +317,19 @@
             </option>
 
           </select>
-
         </label>
 
 
-        <!-- PIERNA -->
+        <!-- PIERNA DOMINANTE -->
 
         <label>
-
           Pierna dominante
 
-          <select
-            name="dominant_foot"
-          >
+          <select name="dominant_foot">
 
             <option value="">
               Selecciona
             </option>
-
 
             <option
               value="right"
@@ -374,14 +338,12 @@
               Derecha
             </option>
 
-
             <option
               value="left"
               <%= form?.dominant_foot === 'left' ? 'selected' : '' %>
             >
               Izquierda
             </option>
-
 
             <option
               value="ambidextrous"
@@ -391,14 +353,12 @@
             </option>
 
           </select>
-
         </label>
 
 
-        <!-- FECHA NACIMIENTO -->
+        <!-- FECHA DE NACIMIENTO -->
 
         <label>
-
           Fecha de nacimiento
 
           <input
@@ -406,16 +366,14 @@
             name="birth_date"
             value="<%= form?.birth_date || '' %>"
           >
-
         </label>
 
 
-        <!-- ALTURA / PESO -->
+        <!-- ALTURA Y PESO -->
 
         <div class="form-grid">
 
           <label>
-
             Altura (cm)
 
             <input
@@ -427,12 +385,10 @@
               step="0.01"
               placeholder="Ej: 175"
             >
-
           </label>
 
 
           <label>
-
             Peso (kg)
 
             <input
@@ -444,16 +400,14 @@
               step="0.1"
               placeholder="Ej: 65"
             >
-
           </label>
 
         </div>
 
 
-        <!-- FOTO JUGADOR -->
+        <!-- FOTO -->
 
         <label>
-
           Foto de perfil
 
           <input
@@ -466,11 +420,10 @@
           <small class="muted">
             JPG, PNG o WEBP. Máximo 5 MB.
           </small>
-
         </label>
 
 
-        <!-- PREVIEW JUGADOR -->
+        <!-- PREVIEW -->
 
         <div
           id="photoPreview"
@@ -487,7 +440,6 @@
         </div>
 
       </div>
-
 
 
       <!-- =================================================
@@ -509,10 +461,9 @@
         </p>
 
 
-        <!-- NOMBRE ACUDIENTE -->
+        <!-- NOMBRE -->
 
         <label>
-
           Nombre completo del acudiente
 
           <input
@@ -522,14 +473,12 @@
             placeholder="Nombre del padre, madre o tutor"
             maxlength="160"
           >
-
         </label>
 
 
         <!-- RELACIÓN -->
 
         <label>
-
           Relación con el jugador
 
           <select
@@ -541,7 +490,6 @@
               Selecciona
             </option>
 
-
             <option
               value="father"
               <%= form?.guardian_relationship === 'father' ? 'selected' : '' %>
@@ -549,14 +497,12 @@
               Padre
             </option>
 
-
             <option
               value="mother"
               <%= form?.guardian_relationship === 'mother' ? 'selected' : '' %>
             >
               Madre
             </option>
-
 
             <option
               value="guardian"
@@ -566,14 +512,12 @@
             </option>
 
           </select>
-
         </label>
 
 
         <!-- TELÉFONO -->
 
         <label>
-
           Teléfono del acudiente
 
           <input
@@ -584,14 +528,12 @@
             maxlength="40"
             autocomplete="tel"
           >
-
         </label>
 
 
         <!-- CORREO -->
 
         <label>
-
           Correo del acudiente
 
           <input
@@ -602,7 +544,6 @@
             maxlength="180"
             autocomplete="email"
           >
-
         </label>
 
 
@@ -627,7 +568,6 @@
       </div>
 
 
-
       <!-- =================================================
            DATOS DEL ENTRENADOR
       ================================================== -->
@@ -648,16 +588,16 @@
         </p>
 
 
-        <!-- CÓDIGO SECRETO -->
+        <!-- CÓDIGO DEL ENTRENADOR -->
 
         <label>
-
           Código secreto de entrenador
 
           <input
             type="password"
-            name="coach_secret"
-            id="coach_secret"
+            name="coach_code"
+            id="coach_code"
+            value="<%= form?.coach_code || '' %>"
             placeholder="Ingresa el código secreto"
             autocomplete="off"
           >
@@ -666,14 +606,12 @@
             Este código es proporcionado únicamente por
             Elite Soccer.
           </small>
-
         </label>
 
 
-        <!-- FECHA NACIMIENTO -->
+        <!-- FECHA -->
 
         <label>
-
           Fecha de nacimiento
 
           <input
@@ -681,14 +619,12 @@
             name="coach_birth_date"
             value="<%= form?.coach_birth_date || '' %>"
           >
-
         </label>
 
 
         <!-- TELÉFONO -->
 
         <label>
-
           Teléfono
 
           <input
@@ -699,14 +635,12 @@
             maxlength="40"
             autocomplete="tel"
           >
-
         </label>
 
 
         <!-- BIOGRAFÍA -->
 
         <label>
-
           Biografía
 
           <textarea
@@ -715,14 +649,12 @@
             maxlength="2000"
             placeholder="Cuéntanos brevemente sobre ti..."
           ><%= form?.coach_bio || '' %></textarea>
-
         </label>
 
 
         <!-- EXPERIENCIA -->
 
         <label>
-
           Experiencia
 
           <textarea
@@ -731,14 +663,12 @@
             maxlength="2000"
             placeholder="Experiencia como entrenador..."
           ><%= form?.coach_experience || '' %></textarea>
-
         </label>
 
 
         <!-- ESPECIALIDAD -->
 
         <label>
-
           Especialidad
 
           <input
@@ -748,14 +678,12 @@
             placeholder="Ej: Formación de jóvenes"
             maxlength="160"
           >
-
         </label>
 
 
         <!-- FORMACIÓN -->
 
         <label>
-
           Formación preferida
 
           <input
@@ -765,14 +693,12 @@
             placeholder="Ej: 3-1-2"
             maxlength="80"
           >
-
         </label>
 
 
         <!-- FOTO ENTRENADOR -->
 
         <label>
-
           Foto de perfil
 
           <input
@@ -785,7 +711,6 @@
           <small class="muted">
             JPG, PNG o WEBP. Máximo 5 MB.
           </small>
-
         </label>
 
 
@@ -806,8 +731,6 @@
         </div>
 
 
-        <!-- INFORMACIÓN ENTRENADOR -->
-
         <div class="registration-info">
 
           <strong>
@@ -827,7 +750,6 @@
         </div>
 
       </div>
-
 
 
       <!-- =================================================
@@ -861,7 +783,6 @@
       </div>
 
 
-
       <!-- =================================================
            INFORMACIÓN ACUDIENTE
       ================================================== -->
@@ -884,7 +805,6 @@
       </div>
 
 
-
       <!-- =================================================
            BOTÓN
       ================================================== -->
@@ -898,7 +818,6 @@
       </button>
 
     </form>
-
 
 
     <!-- =====================================================
@@ -927,10 +846,12 @@
 </section>
 
 
-
 <script>
 
 (function () {
+
+  'use strict';
+
 
   // ==========================================================
   // ELEMENTOS
@@ -939,62 +860,47 @@
   const role =
     document.getElementById('role');
 
-
   const playerFields =
     document.getElementById('playerFields');
-
 
   const guardianFields =
     document.getElementById('guardianFields');
 
-
   const coachFields =
     document.getElementById('coachFields');
-
 
   const playerInfo =
     document.getElementById('playerInfo');
 
-
   const guardianInfo =
     document.getElementById('guardianInfo');
 
-
   const coachSecret =
-    document.getElementById('coach_secret');
-
+    document.getElementById('coach_code');
 
   const coachPhoto =
     document.getElementById('coach_photo');
 
-
   const coachPhotoPreview =
     document.getElementById('coachPhotoPreview');
-
 
   const coachPreviewImage =
     document.getElementById('coachPreviewImage');
 
-
   const playerPhoto =
     document.getElementById('profile_photo');
-
 
   const playerPhotoPreview =
     document.getElementById('photoPreview');
 
-
   const playerPreviewImage =
     document.getElementById('previewImage');
-
 
   const form =
     document.getElementById('registerForm');
 
-
   const button =
     document.getElementById('registerButton');
-
 
 
   // ==========================================================
@@ -1006,18 +912,14 @@
     const selected =
       role.value;
 
-
     const isPlayer =
       selected === 'player';
-
 
     const isGuardian =
       selected === 'guardian';
 
-
     const isCoach =
       selected === 'coach';
-
 
 
     // --------------------------------------------------------
@@ -1027,23 +929,24 @@
     playerFields.style.display =
       isPlayer ? 'block' : 'none';
 
-
     playerInfo.style.display =
       isPlayer ? 'block' : 'none';
-
 
 
     // --------------------------------------------------------
     // ACUDIENTE
     // --------------------------------------------------------
 
+    /*
+     * Los datos del acudiente pertenecen al jugador.
+     * Por eso aparecen cuando se registra un jugador.
+     */
+
     guardianFields.style.display =
       isPlayer ? 'block' : 'none';
 
-
     guardianInfo.style.display =
       isGuardian ? 'block' : 'none';
-
 
 
     // --------------------------------------------------------
@@ -1052,7 +955,6 @@
 
     coachFields.style.display =
       isCoach ? 'block' : 'none';
-
 
 
     // --------------------------------------------------------
@@ -1064,7 +966,6 @@
         'input, select, textarea'
       );
 
-
     playerInputs.forEach(
       function (input) {
 
@@ -1073,7 +974,6 @@
 
       }
     );
-
 
 
     // --------------------------------------------------------
@@ -1085,16 +985,14 @@
         'input, select, textarea'
       );
 
-
     guardianInputs.forEach(
       function (input) {
 
         input.required =
-          isPlayer;
+          false;
 
       }
     );
-
 
 
     // --------------------------------------------------------
@@ -1106,16 +1004,23 @@
         'input, select, textarea'
       );
 
-
     coachInputs.forEach(
       function (input) {
 
         input.required =
-          isCoach;
+          false;
 
       }
     );
 
+
+    /*
+     * El código secreto sí es obligatorio
+     * cuando la cuenta es de entrenador.
+     */
+
+    coachSecret.required =
+      isCoach;
 
 
     // --------------------------------------------------------
@@ -1125,13 +1030,15 @@
     playerPhoto.required =
       false;
 
-
     coachPhoto.required =
-      isCoach;
+      false;
 
   }
 
 
+  // ==========================================================
+  // EVENTO CAMBIO DE ROL
+  // ==========================================================
 
   role.addEventListener(
     'change',
@@ -1140,7 +1047,6 @@
 
 
   updateRole();
-
 
 
   // ==========================================================
@@ -1224,7 +1130,6 @@
   );
 
 
-
   // ==========================================================
   // PREVIEW FOTO ENTRENADOR
   // ==========================================================
@@ -1306,9 +1211,8 @@
   );
 
 
-
   // ==========================================================
-  // VALIDAR CONTRASEÑAS
+  // VALIDAR FORMULARIO
   // ==========================================================
 
   form.addEventListener(
@@ -1318,10 +1222,13 @@
       const password =
         document.getElementById('password').value;
 
-
       const confirmPassword =
         document.getElementById('confirm_password').value;
 
+
+      // ------------------------------------------------------
+      // CONTRASEÑAS
+      // ------------------------------------------------------
 
       if (password !== confirmPassword) {
 
@@ -1336,9 +1243,8 @@
       }
 
 
-
       // ------------------------------------------------------
-      // VALIDACIÓN DEL CÓDIGO DE ENTRENADOR
+      // CÓDIGO ENTRENADOR
       // ------------------------------------------------------
 
       if (role.value === 'coach') {
@@ -1360,6 +1266,32 @@
       }
 
 
+      // ------------------------------------------------------
+      // VALIDACIÓN JUGADOR
+      // ------------------------------------------------------
+
+      if (role.value === 'player') {
+
+        const position =
+          document.querySelector(
+            'select[name="position"]'
+          ).value;
+
+
+        if (!position) {
+
+          event.preventDefault();
+
+          alert(
+            'Debes seleccionar tu posición.'
+          );
+
+          return;
+
+        }
+
+      }
+
 
       // ------------------------------------------------------
       // DESACTIVAR BOTÓN
@@ -1367,7 +1299,6 @@
 
       button.disabled =
         true;
-
 
       button.textContent =
         'CREANDO CUENTA...';
@@ -1378,7 +1309,6 @@
 })();
 
 </script>
-
 
 
 <%- include('../partials/footer') %>
