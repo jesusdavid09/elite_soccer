@@ -2,21 +2,38 @@
 // ELITE SOCCER - APP.JS
 // ========================================
 
-// Service Worker / PWA
+// ========================================
+// SERVICE WORKER / PWA
+// ========================================
+
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker
-            .register('/sw.js')
-            .then(() => {
-                console.log('Elite Soccer: Service Worker registrado.');
-            })
-            .catch((error) => {
-                console.error(
-                    'Elite Soccer: error registrando Service Worker:',
-                    error
-                );
-            });
+
+    window.addEventListener('load', async () => {
+
+        try {
+
+            const registration =
+                await navigator.serviceWorker.register('/sw.js');
+
+            console.log(
+                'Elite Soccer: Service Worker registrado.',
+                registration
+            );
+
+            // Verificar si existe una actualización
+            registration.update();
+
+        } catch (error) {
+
+            console.error(
+                'Elite Soccer: error registrando Service Worker:',
+                error
+            );
+
+        }
+
     });
+
 }
 
 
@@ -45,3 +62,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 });
+
+
+// ========================================
+// RECARGAR CUANDO HAY NUEVA VERSIÓN
+// DEL SERVICE WORKER
+// ========================================
+
+if ('serviceWorker' in navigator) {
+
+    navigator.serviceWorker.addEventListener(
+        'controllerchange',
+        () => {
+
+            console.log(
+                'Elite Soccer: nueva versión detectada.'
+            );
+
+            window.location.reload();
+
+        }
+    );
+
+}
