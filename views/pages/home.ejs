@@ -29,14 +29,76 @@
                 Únete a Elite Soccer
             </a>
 
+
             <% if (!user) { %>
-                <a class="btn outline" href="/login">
+
+                <!-- ====================================================
+                     USUARIO NO AUTENTICADO
+                ===================================================== -->
+
+                <a
+                    class="btn outline"
+                    href="/login"
+                >
                     🔐 Acceso
                 </a>
-            <% } else { %>
-                <a class="btn outline" href="/dashboard">
-                    📊 Panel de control
+
+
+            <% } else if (user.role === 'coach') { %>
+
+                <!-- ====================================================
+                     ENTRENADOR
+                ===================================================== -->
+
+                <a
+                    class="btn outline"
+                    href="/dashboard"
+                >
+                    ⚽ Panel del entrenador
                 </a>
+
+
+            <% } else if (user.role === 'admin') { %>
+
+                <!-- ====================================================
+                     ADMINISTRADOR
+                ===================================================== -->
+
+                <a
+                    class="btn outline"
+                    href="/dashboard"
+                >
+                    🛠️ Administración
+                </a>
+
+
+            <% } else if (user.role === 'guardian') { %>
+
+                <!-- ====================================================
+                     ACUDIENTE
+                ===================================================== -->
+
+                <a
+                    class="btn outline"
+                    href="/dashboard"
+                >
+                    👨‍👩‍👦 Panel de acudiente
+                </a>
+
+
+            <% } else { %>
+
+                <!-- ====================================================
+                     JUGADOR
+                ===================================================== -->
+
+                <a
+                    class="btn outline"
+                    href="/dashboard"
+                >
+                    ⚽ Mi panel
+                </a>
+
             <% } %>
 
         </div>
@@ -45,15 +107,17 @@
 
 </section>
 
-<!-- ============================================================ -->
-<!-- PRÓXIMOS PARTIDOS -->
-<!-- ============================================================ -->
+
+<!-- ============================================================
+     PRÓXIMOS PARTIDOS
+============================================================ -->
 
 <section class="section">
 
     <div class="section-head">
 
         <div>
+
             <span class="eyebrow">
                 COMPETICIÓN
             </span>
@@ -61,6 +125,7 @@
             <h2>
                 Próximos partidos
             </h2>
+
         </div>
 
         <a href="/partidos">
@@ -68,6 +133,7 @@
         </a>
 
     </div>
+
 
     <% if (matches && matches.length > 0) { %>
 
@@ -82,40 +148,76 @@
                     </span>
 
                     <h3>
+
                         ELITE SOCCER
-                        <b>VS</b>
+
+                        <b>
+                            VS
+                        </b>
+
                         <%= m.opponent || 'Por definir' %>
+
                     </h3>
 
+
                     <p>
-                        <% 
+
+                        <%
                             let dateStr = 'Fecha por confirmar';
+
                             if (m.match_date) {
+
                                 try {
-                                    const d = new Date(m.match_date);
+
+                                    const d =
+                                        new Date(m.match_date);
+
                                     if (!isNaN(d.getTime())) {
-                                        dateStr = d.toLocaleDateString('es-CO');
+
+                                        dateStr =
+                                            d.toLocaleDateString(
+                                                'es-CO'
+                                            );
+
                                     }
+
                                 } catch(e) {}
+
                             }
                         %>
+
                         <%= dateStr %>
+
                         ·
-                        <% 
-                            let timeStr = 'Hora por confirmar';
+
+                        <%
+                            let timeStr =
+                                'Hora por confirmar';
+
                             if (m.match_time) {
-                                timeStr = String(m.match_time).slice(0,5);
+
+                                timeStr =
+                                    String(m.match_time)
+                                        .slice(0,5);
+
                             }
                         %>
+
                         <%= timeStr %>
+
                         ·
+
                         <%= m.location || 'Por confirmar' %>
+
                     </p>
 
+
                     <% if (m.category_name) { %>
+
                         <span class="badge">
                             <%= m.category_name %>
                         </span>
+
                     <% } %>
 
                 </article>
@@ -124,19 +226,25 @@
 
         </div>
 
+
     <% } else { %>
 
         <div class="empty-state">
-            <p>No hay partidos programados próximamente.</p>
+
+            <p>
+                No hay partidos programados próximamente.
+            </p>
+
         </div>
 
     <% } %>
 
 </section>
 
-<!-- ============================================================ -->
-<!-- JUGADORES DESTACADOS -->
-<!-- ============================================================ -->
+
+<!-- ============================================================
+     JUGADORES DESTACADOS
+============================================================ -->
 
 <section class="section">
 
@@ -151,6 +259,7 @@
         </a>
 
     </div>
+
 
     <% if (players && players.length > 0) { %>
 
@@ -182,6 +291,7 @@
 
                     </div>
 
+
                     <div>
 
                         <strong>
@@ -189,9 +299,13 @@
                         </strong>
 
                         <small>
+
                             #<%= p.dorsal || '—' %>
+
                             ·
+
                             <%= p.position || 'Jugador' %>
+
                         </small>
 
                     </div>
@@ -202,19 +316,25 @@
 
         </div>
 
+
     <% } else { %>
 
         <div class="empty-state">
-            <p>No hay jugadores registrados aún.</p>
+
+            <p>
+                No hay jugadores registrados aún.
+            </p>
+
         </div>
 
     <% } %>
 
 </section>
 
-<!-- ============================================================ -->
-<!-- ÚLTIMAS NOTICIAS -->
-<!-- ============================================================ -->
+
+<!-- ============================================================
+     ÚLTIMAS NOTICIAS
+============================================================ -->
 
 <section class="section news-strip">
 
@@ -229,6 +349,7 @@
         </a>
 
     </div>
+
 
     <% if (news && news.length > 0) { %>
 
@@ -245,26 +366,43 @@
                         NOTICIA
                     </small>
 
+
                     <h3>
                         <%= n.title || 'Sin título' %>
                     </h3>
+
 
                     <p>
                         <%= n.excerpt || '' %>
                     </p>
 
-                    <% if (n.published_at) { 
+
+                    <% if (n.published_at) {
+
                         let dateStr = '';
+
                         try {
-                            const d = new Date(n.published_at);
+
+                            const d =
+                                new Date(n.published_at);
+
                             if (!isNaN(d.getTime())) {
-                                dateStr = d.toLocaleDateString('es-CO');
+
+                                dateStr =
+                                    d.toLocaleDateString(
+                                        'es-CO'
+                                    );
+
                             }
+
                         } catch(e) {}
+
                     %>
+
                         <small class="date">
                             <%= dateStr %>
                         </small>
+
                     <% } %>
 
                 </a>
@@ -273,14 +411,20 @@
 
         </div>
 
+
     <% } else { %>
 
         <div class="empty-state">
-            <p>No hay noticias publicadas aún.</p>
+
+            <p>
+                No hay noticias publicadas aún.
+            </p>
+
         </div>
 
     <% } %>
 
 </section>
+
 
 <%- include('../partials/footer') %>

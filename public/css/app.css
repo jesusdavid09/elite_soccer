@@ -2,246 +2,444 @@
    REGISTRO - CAMPOS CONDICIONALES
    ============================================================ */
 
-/* Contenedor de campos de jugador */
-#playerFields {
-  transition: all 0.3s ease;
+/* ------------------------------------------------------------
+   Contenedores de campos según el rol
+   ------------------------------------------------------------ */
+
+#playerFields,
+#coachFields,
+#guardianFields {
+    transition:
+        opacity 0.25s ease,
+        max-height 0.3s ease,
+        margin 0.3s ease,
+        padding 0.3s ease;
 }
 
-#playerFields .form-section {
-  margin-top: 0;
+/*
+ * Cuando JavaScript oculta un bloque,
+ * evitamos que deje espacio vacío.
+ */
+
+#playerFields.hidden,
+#coachFields.hidden,
+#guardianFields.hidden {
+    display: none;
 }
 
-#playerFields .form-section .eyebrow {
-  display: block;
-  margin-bottom: 4px;
+/* ------------------------------------------------------------
+   Secciones internas
+   ------------------------------------------------------------ */
+
+#playerFields .form-section,
+#coachFields .form-section,
+#guardianFields .form-section {
+    margin-top: 12px;
 }
 
-/* Contenedor del código de invitación para entrenadores */
+#playerFields .form-section:first-child,
+#coachFields .form-section:first-child,
+#guardianFields .form-section:first-child {
+    margin-top: 0;
+}
+
+#playerFields .form-section .eyebrow,
+#coachFields .form-section .eyebrow,
+#guardianFields .form-section .eyebrow {
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* ------------------------------------------------------------
+   Código / clave de entrenador
+   ------------------------------------------------------------ */
+
 #coachCodeContainer {
-  transition: all 0.3s ease;
+    transition:
+        opacity 0.25s ease,
+        max-height 0.3s ease,
+        margin 0.3s ease,
+        padding 0.3s ease;
+}
+
+#coachCodeContainer.hidden {
+    display: none;
 }
 
 #coachCodeContainer .form-section {
-  margin-top: 0;
+    margin-top: 0;
 }
 
 #coachCodeContainer .muted {
-  font-size: 0.85rem;
+    font-size: 0.85rem;
 }
 
-/* Campos en fila (altura y peso) */
+/* ------------------------------------------------------------
+   Datos de contacto del entrenador
+   ------------------------------------------------------------ */
+
+#coachContactFields {
+    transition:
+        opacity 0.25s ease,
+        max-height 0.3s ease;
+}
+
+#coachContactFields.hidden {
+    display: none;
+}
+
+/* ------------------------------------------------------------
+   Campos en fila
+   ------------------------------------------------------------ */
+
 .form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
 }
 
-/* Info box - categoría automática */
+/* ------------------------------------------------------------
+   Información de categoría automática
+   ------------------------------------------------------------ */
+
 .info-box {
-  background: rgba(16, 28, 54, 0.6);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--blue);
-  border-radius: 4px;
-  padding: 14px 16px;
-  margin: 8px 0 4px;
+    background: rgba(16, 28, 54, 0.6);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--blue);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 8px 0 4px;
 }
 
 .info-box strong {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--text);
-  font-family: Rajdhani;
-  font-size: 15px;
-  letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text);
+    font-family: Rajdhani, sans-serif;
+    font-size: 15px;
+    letter-spacing: 0.5px;
 }
 
 .info-box p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.5;
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
 }
 
-/* Mensajes dinámicos de aprobación */
+/* ------------------------------------------------------------
+   Mensajes dinámicos
+   ------------------------------------------------------------ */
+
 #approvalMessage,
-#coachMessage {
-  font-weight: 500;
-  font-size: 0.9rem;
+#coachMessage,
+#guardianMessage {
+    font-weight: 500;
+    font-size: 0.9rem;
 }
 
 #approvalMessage {
-  color: #f59e0b; /* amarillo */
+    color: #f59e0b;
 }
 
 #coachMessage {
-  color: #22c55e; /* verde */
+    color: #22c55e;
+}
+
+#guardianMessage {
+    color: #6fa2ff;
+}
+
+/* ------------------------------------------------------------
+   Selector de tipo de cuenta
+   ------------------------------------------------------------ */
+
+.role-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.role-option {
+    position: relative;
+}
+
+.role-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.role-option label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    min-height: 90px;
+    padding: 12px;
+
+    border: 1px solid var(--line);
+    border-radius: 6px;
+
+    background: rgba(8, 16, 33, 0.65);
+
+    color: var(--muted);
+
+    cursor: pointer;
+
+    text-align: center;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.role-option label:hover {
+    border-color: var(--blue);
+    color: var(--text);
+    transform: translateY(-1px);
+}
+
+.role-option input:checked + label {
+    border-color: var(--blue);
+    background: rgba(20, 92, 255, 0.12);
+    color: var(--text);
+    box-shadow: 0 0 0 1px rgba(20, 92, 255, 0.2);
+}
+
+.role-option .role-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.role-option .role-title {
+    font-family: Rajdhani, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.role-option .role-description {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* ------------------------------------------------------------
+   Perfil del entrenador
+   ------------------------------------------------------------ */
+
+.coach-profile-box {
+    background: rgba(8, 16, 33, 0.6);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 16px;
+    margin-top: 12px;
+}
+
+.coach-profile-box .eyebrow {
+    display: block;
+    color: #6fa2ff;
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+}
+
+.coach-profile-box p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* ------------------------------------------------------------
+   Texto de ayuda
+   ------------------------------------------------------------ */
+
+.form label small.muted {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 400;
+}
+
+/* ------------------------------------------------------------
+   Separadores de secciones
+   ------------------------------------------------------------ */
+
+.form .form-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.form .form-section:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.form .form-section .eyebrow {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #6fa2ff;
+    margin-bottom: 4px;
+}
+
+.form .form-section p.muted {
+    font-size: 0.85rem;
+    margin: 0 0 8px 0;
 }
 
 /* ============================================================
    HOME - ESTILOS ADICIONALES
    ============================================================ */
 
-/* Badge de categoría en partidos */
 .badge {
-  display: inline-block;
-  background: var(--blue);
-  color: #fff;
-  padding: 2px 12px;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  margin-top: 8px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+    display: inline-block;
+    background: var(--blue);
+    color: #fff;
+    padding: 2px 12px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
-/* Estado vacío - cuando no hay datos */
 .empty-state {
-  padding: 48px 20px;
-  text-align: center;
-  background: rgba(8, 16, 33, 0.6);
-  border-radius: 4px;
-  border: 2px dashed var(--line);
+    padding: 48px 20px;
+    text-align: center;
+    background: rgba(8, 16, 33, 0.6);
+    border-radius: 4px;
+    border: 2px dashed var(--line);
 }
 
 .empty-state p {
-  color: var(--muted);
-  margin: 0;
-  font-size: 1rem;
+    color: var(--muted);
+    margin: 0;
+    font-size: 1rem;
 }
 
-/* Placeholder de dorsal en tarjeta de jugador */
 .dorsal-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--muted);
-  background: rgba(5, 9, 20, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    height: 100%;
+
+    font-size: 2rem;
+    font-weight: 700;
+
+    color: var(--muted);
+    background: rgba(5, 9, 20, 0.8);
 }
 
-/* Fecha en noticias */
 .card .date {
-  display: block;
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 0.75rem;
+    display: block;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.75rem;
 }
 
-/* Botones de acción en hero */
+/* ============================================================
+   BOTONES DEL HERO
+   ============================================================ */
+
 .hero .actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: flex-start;
-  margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: flex-start;
+    margin-top: 24px;
 }
 
 .hero .actions .btn {
-  min-width: 160px;
-  text-align: center;
+    min-width: 160px;
+    text-align: center;
 }
 
 /* ============================================================
-   FORMULARIOS - ESTILOS ADICIONALES
-   ============================================================ */
-
-/* Pequeño texto de ayuda en formularios */
-.form label small.muted {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin-top: 4px;
-  font-weight: 400;
-}
-
-/* Separador de secciones en formularios */
-.form .form-section {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-}
-
-.form .form-section:first-of-type {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-}
-
-.form .form-section .eyebrow {
-  display: block;
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: #6fa2ff;
-  margin-bottom: 4px;
-}
-
-.form .form-section p.muted {
-  font-size: 0.85rem;
-  margin: 0 0 8px 0;
-}
-
-/* ============================================================
-   RESPONSIVE - AJUSTES ADICIONALES
+   RESPONSIVE
    ============================================================ */
 
 @media (max-width: 650px) {
-  /* Formulario en fila se vuelve columna */
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
 
-  /* Hero actions en móvil */
-  .hero .actions .btn {
-    min-width: 100%;
-    width: 100%;
-    justify-content: center;
-  }
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
 
-  .hero .actions {
-    flex-direction: column;
-    width: 100%;
-  }
+    .role-selector {
+        grid-template-columns: 1fr;
+    }
 
-  /* Info box más compacto en móvil */
-  .info-box {
-    padding: 12px;
-  }
+    .role-option label {
+        min-height: 70px;
+        flex-direction: row;
+        justify-content: flex-start;
+        text-align: left;
+    }
 
-  .info-box p {
-    font-size: 0.8rem;
-  }
+    .role-option .role-icon {
+        font-size: 22px;
+    }
 
-  /* Badge más pequeño en móvil */
-  .badge {
-    font-size: 0.6rem;
-    padding: 2px 10px;
-  }
+    .hero .actions .btn {
+        min-width: 100%;
+        width: 100%;
+        justify-content: center;
+    }
 
-  /* Campos condicionales en móvil */
-  #playerFields {
-    margin-top: 8px;
-  }
+    .hero .actions {
+        flex-direction: column;
+        width: 100%;
+    }
 
-  #coachCodeContainer {
-    margin-top: 8px;
-  }
+    .info-box {
+        padding: 12px;
+    }
+
+    .info-box p {
+        font-size: 0.8rem;
+    }
+
+    .badge {
+        font-size: 0.6rem;
+        padding: 2px 10px;
+    }
+
+    #playerFields,
+    #coachFields,
+    #guardianFields,
+    #coachCodeContainer {
+        margin-top: 8px;
+    }
 }
 
 @media (max-width: 400px) {
-  /* Ajustes extra para pantallas muy pequeñas */
-  .auth-card.register-card {
-    padding: 20px 14px;
-  }
 
-  .form .form-section .eyebrow {
-    font-size: 10px;
-  }
+    .auth-card.register-card {
+        padding: 20px 14px;
+    }
 
-  .info-box strong {
-    font-size: 13px;
-  }
+    .form .form-section .eyebrow {
+        font-size: 10px;
+    }
+
+    .info-box strong {
+        font-size: 13px;
+    }
+
+    .role-option label {
+        padding: 10px;
+    }
 }

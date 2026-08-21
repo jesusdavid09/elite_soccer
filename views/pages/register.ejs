@@ -15,15 +15,7 @@
 
     <p class="muted center">
       Regístrate como jugador, acudiente o entrenador.
-      <%-- Los jugadores y acudientes quedan pendientes de aprobación. --%>
-      <span id="approvalMessage">
-        Los jugadores y acudientes quedan pendientes de aprobación.
-      </span>
-      <span id="coachMessage" style="display:none;">
-        Los entrenadores son aprobados automáticamente.
-      </span>
     </p>
-
 
     <% if(error){ %>
 
@@ -32,7 +24,6 @@
       </div>
 
     <% } %>
-
 
     <% if(success){ %>
 
@@ -53,14 +44,12 @@
 
     <% } else { %>
 
-
       <form
         method="post"
         action="/registro"
         class="form"
         id="registerForm"
       >
-
 
         <!-- =====================================
              DATOS DE LA CUENTA
@@ -73,7 +62,6 @@
           </span>
 
         </div>
-
 
         <label>
 
@@ -92,7 +80,6 @@
 
         </label>
 
-
         <label>
 
           Correo electrónico
@@ -108,6 +95,9 @@
 
         </label>
 
+        <!-- =====================================
+             TIPO DE CUENTA
+        ====================================== -->
 
         <label>
 
@@ -150,55 +140,57 @@
 
         </label>
 
-
         <!-- =====================================
-             CÓDIGO DE INVITACIÓN (solo entrenador)
+             MENSAJE DE APROBACIÓN
         ====================================== -->
 
-        <div id="coachCodeContainer" style="display:none;">
+        <div
+          id="approvalMessage"
+          class="info-box"
+          style="display:none;"
+        >
 
-          <div class="form-section">
+          <strong>
+            ⏳ Registro pendiente
+          </strong>
 
-            <span class="eyebrow">
-              VERIFICACIÓN DE ENTRENADOR
-            </span>
-
-            <p class="muted">
-              Ingresa el código de invitación proporcionado
-              por la administración del club.
-            </p>
-
-          </div>
-
-          <label>
-
-            Código de invitación
-
-            <input
-              type="text"
-              name="invitation_code"
-              id="invitation_code"
-              value="<%= form.invitation_code || '' %>"
-              placeholder="Ej: ELITE2026"
-              autocomplete="off"
-            >
-
-            <small class="muted">
-              ⚠️ Este código es confidencial. Solo compártelo con
-              personas autorizadas.
-            </small>
-
-          </label>
+          <p>
+            Tu cuenta quedará pendiente de aprobación
+            antes de poder ingresar al sistema.
+          </p>
 
         </div>
 
+        <!-- =====================================
+             MENSAJE ENTRENADOR
+        ====================================== -->
+
+        <div
+          id="coachMessage"
+          class="info-box"
+          style="display:none;"
+        >
+
+          <strong>
+            📋 Cuenta de entrenador
+          </strong>
+
+          <p>
+            El entrenador forma parte del equipo administrativo
+            de Elite Soccer y puede ingresar directamente
+            después de crear su cuenta.
+          </p>
+
+        </div>
 
         <!-- =====================================
              DATOS DEL JUGADOR
         ====================================== -->
 
-        <div id="playerFields">
-
+        <div
+          id="playerFields"
+          style="display:none;"
+        >
 
           <div class="form-section">
 
@@ -212,8 +204,6 @@
             </p>
 
           </div>
-
-
 
           <!-- FECHA DE NACIMIENTO -->
 
@@ -233,8 +223,6 @@
             </small>
 
           </label>
-
-
 
           <!-- POSICIÓN -->
 
@@ -372,8 +360,6 @@
 
           </label>
 
-
-
           <!-- DORSAL -->
 
           <label>
@@ -395,8 +381,6 @@
             </small>
 
           </label>
-
-
 
           <!-- PIE DOMINANTE -->
 
@@ -444,12 +428,9 @@
 
           </label>
 
-
-
           <!-- ESTATURA Y PESO -->
 
           <div class="form-row">
-
 
             <label>
 
@@ -471,7 +452,6 @@
 
             </label>
 
-
             <label>
 
               Peso
@@ -492,10 +472,7 @@
 
             </label>
 
-
           </div>
-
-
 
           <!-- CATEGORÍA AUTOMÁTICA -->
 
@@ -513,10 +490,7 @@
 
           </div>
 
-
         </div>
-
-
 
         <!-- =====================================
              SEGURIDAD
@@ -529,7 +503,6 @@
           </span>
 
         </div>
-
 
         <label>
 
@@ -550,7 +523,6 @@
 
         </label>
 
-
         <label>
 
           Confirmar contraseña
@@ -566,8 +538,6 @@
 
         </label>
 
-
-
         <!-- =====================================
              BOTÓN
         ====================================== -->
@@ -579,9 +549,7 @@
           CREAR CUENTA
         </button>
 
-
       </form>
-
 
       <p class="center muted">
 
@@ -596,14 +564,11 @@
 
       </p>
 
-
     <% } %>
 
   </div>
 
 </section>
-
-
 
 <script>
 
@@ -612,9 +577,6 @@
 
   const playerFields =
     document.getElementById('playerFields');
-
-  const coachCodeContainer =
-    document.getElementById('coachCodeContainer');
 
   const approvalMessage =
     document.getElementById('approvalMessage');
@@ -634,15 +596,16 @@
   const dominantFoot =
     document.getElementById('dominant_foot');
 
-  const invitationCode =
-    document.getElementById('invitation_code');
-
 
   function updateFields() {
 
     const role = roleSelect.value;
 
-    // ---- JUGADOR ----
+
+    /* =========================================
+       JUGADOR
+    ========================================= */
+
     if (role === 'player') {
 
       playerFields.style.display = 'block';
@@ -652,10 +615,18 @@
       dorsal.required = true;
       dominantFoot.required = true;
 
-      approvalMessage.style.display = 'inline';
+      approvalMessage.style.display = 'block';
       coachMessage.style.display = 'none';
 
-    } else {
+      return;
+    }
+
+
+    /* =========================================
+       ENTRENADOR
+    ========================================= */
+
+    if (role === 'coach') {
 
       playerFields.style.display = 'none';
 
@@ -664,31 +635,46 @@
       dorsal.required = false;
       dominantFoot.required = false;
 
-    }
-
-    // ---- ENTRENADOR ----
-    if (role === 'coach') {
-
-      coachCodeContainer.style.display = 'block';
-      invitationCode.required = true;
-
       approvalMessage.style.display = 'none';
-      coachMessage.style.display = 'inline';
+      coachMessage.style.display = 'block';
 
-    } else {
-
-      coachCodeContainer.style.display = 'none';
-      invitationCode.required = false;
-
+      return;
     }
 
-    // ---- ACUDIENTE ----
+
+    /* =========================================
+       ACUDIENTE
+    ========================================= */
+
     if (role === 'guardian') {
 
-      approvalMessage.style.display = 'inline';
+      playerFields.style.display = 'none';
+
+      birthDate.required = false;
+      position.required = false;
+      dorsal.required = false;
+      dominantFoot.required = false;
+
+      approvalMessage.style.display = 'block';
       coachMessage.style.display = 'none';
 
+      return;
     }
+
+
+    /* =========================================
+       ESTADO POR DEFECTO
+    ========================================= */
+
+    playerFields.style.display = 'none';
+
+    birthDate.required = false;
+    position.required = false;
+    dorsal.required = false;
+    dominantFoot.required = false;
+
+    approvalMessage.style.display = 'none';
+    coachMessage.style.display = 'none';
 
   }
 
@@ -699,11 +685,8 @@
   );
 
 
-  // Ejecutar al cargar la página
   updateFields();
 
-
 </script>
-
 
 <%- include('../partials/footer') %>

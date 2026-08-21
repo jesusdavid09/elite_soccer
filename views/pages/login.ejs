@@ -1,8 +1,8 @@
-<%- include('../partials/header', { title: 'Registro' }) %>
+<%- include('../partials/header', { title: 'Crear cuenta' }) %>
 
 <section class="auth-page">
 
-  <div class="auth-card">
+  <div class="auth-card register-card">
 
     <img
       src="/images/elite-soccer-logo.png"
@@ -17,333 +17,695 @@
       Crear cuenta
     </h1>
 
+    <p class="muted center">
+      Regístrate como jugador, acudiente o entrenador.
+    </p>
+
     <% if (error) { %>
+
       <div class="alert danger">
         <%= error %>
       </div>
+
     <% } %>
 
     <% if (success) { %>
+
       <div class="alert success">
         <%= success %>
       </div>
-    <% } %>
 
-    <form method="post" action="/registro" class="form">
+      <p class="center">
 
-      <!-- ============================================================ -->
-      <!-- NOMBRE COMPLETO -->
-      <!-- ============================================================ -->
-
-      <label>
-        Nombre completo
-
-        <input
-          type="text"
-          name="name"
-          value="<%= form.name || '' %>"
-          minlength="3"
-          maxlength="120"
-          required
+        <a
+          class="btn full"
+          href="/login"
         >
-      </label>
+          IR A INICIAR SESIÓN
+        </a>
 
-      <!-- ============================================================ -->
-      <!-- CORREO -->
-      <!-- ============================================================ -->
+      </p>
 
-      <label>
-        Correo electrónico
+    <% } else { %>
 
-        <input
-          type="email"
-          name="email"
-          value="<%= form.email || '' %>"
-          autocomplete="email"
-          required
-        >
-      </label>
+      <form
+        method="post"
+        action="/registro"
+        class="form"
+        id="registerForm"
+      >
 
-      <!-- ============================================================ -->
-      <!-- ROL -->
-      <!-- ============================================================ -->
+        <!-- ============================================================
+             DATOS DE LA CUENTA
+        ============================================================ -->
 
-      <label>
-        Tipo de cuenta
+        <div class="form-section">
 
-        <select
-          name="role"
-          id="role"
-          required
-        >
-          <option
-            value="player"
-            <%= form.role === 'player' ? 'selected' : '' %>
-          >
-            🏃 Jugador
-          </option>
+          <span class="eyebrow">
+            DATOS DE LA CUENTA
+          </span>
 
-          <option
-            value="guardian"
-            <%= form.role === 'guardian' ? 'selected' : '' %>
-          >
-            👨‍👩‍👦 Acudiente / Padre
-          </option>
+        </div>
 
-          <option
-            value="coach"
-            <%= form.role === 'coach' ? 'selected' : '' %>
-          >
-            📋 Entrenador
-          </option>
-        </select>
-      </label>
+        <!-- NOMBRE -->
 
-      <!-- ============================================================ -->
-      <!-- CÓDIGO DE INVITACIÓN (solo para entrenadores) -->
-      <!-- ============================================================ -->
-
-      <div id="coach-code-container" style="display: none;">
         <label>
-          Código de invitación
+
+          Nombre completo
 
           <input
             type="text"
-            name="invitation_code"
-            id="invitation_code"
-            value="<%= form.invitation_code || '' %>"
-            placeholder="Ingresa el código secreto de entrenador"
-            autocomplete="off"
-          >
-        </label>
-
-        <p class="muted small">
-          ⚠️ Necesitas un código de invitación para registrarte como entrenador.
-          Solicítalo al administrador del club.
-        </p>
-      </div>
-
-      <!-- ============================================================ -->
-      <!-- CAMPOS DE JUGADOR (solo visibles si role = player) -->
-      <!-- ============================================================ -->
-
-      <div id="player-fields">
-
-        <hr>
-
-        <h3>📋 Datos del jugador</h3>
-
-        <!-- Dorsal -->
-        <label>
-          Dorsal (1-99)
-
-          <input
-            type="number"
-            name="dorsal"
-            id="dorsal"
-            value="<%= form.dorsal || '' %>"
-            min="1"
-            max="99"
-            placeholder="Ej: 10"
-          >
-        </label>
-
-        <!-- Posición -->
-        <label>
-          Posición
-
-          <select name="position" id="position">
-            <option value="">Selecciona tu posición</option>
-            <option value="goalkeeper" <%= form.position === 'goalkeeper' ? 'selected' : '' %>>Portero</option>
-            <option value="defender" <%= form.position === 'defender' ? 'selected' : '' %>>Defensa central</option>
-            <option value="right_back" <%= form.position === 'right_back' ? 'selected' : '' %>>Lateral derecho</option>
-            <option value="left_back" <%= form.position === 'left_back' ? 'selected' : '' %>>Lateral izquierdo</option>
-            <option value="defensive_midfielder" <%= form.position === 'defensive_midfielder' ? 'selected' : '' %>>Pivote / Mediocentro defensivo</option>
-            <option value="central_midfielder" <%= form.position === 'central_midfielder' ? 'selected' : '' %>>Mediocentro</option>
-            <option value="attacking_midfielder" <%= form.position === 'attacking_midfielder' ? 'selected' : '' %>>Mediapunta</option>
-            <option value="right_midfielder" <%= form.position === 'right_midfielder' ? 'selected' : '' %>>Interior derecho</option>
-            <option value="left_midfielder" <%= form.position === 'left_midfielder' ? 'selected' : '' %>>Interior izquierdo</option>
-            <option value="right_winger" <%= form.position === 'right_winger' ? 'selected' : '' %>>Extremo derecho</option>
-            <option value="left_winger" <%= form.position === 'left_winger' ? 'selected' : '' %>>Extremo izquierdo</option>
-            <option value="striker" <%= form.position === 'striker' ? 'selected' : '' %>>Delantero centro</option>
-            <option value="false_nine" <%= form.position === 'false_nine' ? 'selected' : '' %>>Falso 9</option>
-          </select>
-        </label>
-
-        <!-- Pierna dominante -->
-        <label>
-          Pierna dominante
-
-          <select name="dominant_foot" id="dominant_foot">
-            <option value="">Selecciona</option>
-            <option value="right" <%= form.dominant_foot === 'right' ? 'selected' : '' %>>Derecha</option>
-            <option value="left" <%= form.dominant_foot === 'left' ? 'selected' : '' %>>Izquierda</option>
-            <option value="ambidextrous" <%= form.dominant_foot === 'ambidextrous' ? 'selected' : '' %>>Ambidiestro</option>
-          </select>
-        </label>
-
-        <!-- Fecha de nacimiento -->
-        <label>
-          Fecha de nacimiento
-
-          <input
-            type="date"
-            name="birth_date"
-            id="birth_date"
-            value="<%= form.birth_date || '' %>"
+            name="name"
+            value="<%= form.name || '' %>"
+            minlength="3"
+            maxlength="120"
+            autocomplete="name"
+            placeholder="Ej: Jesús David Riera"
             required
           >
+
         </label>
 
-        <!-- Altura -->
+
+        <!-- CORREO -->
+
         <label>
-          Altura (cm)
+
+          Correo electrónico
 
           <input
-            type="number"
-            name="height_cm"
-            id="height_cm"
-            value="<%= form.height_cm || '' %>"
-            min="100"
-            max="230"
-            placeholder="Ej: 175"
-            step="0.1"
+            type="email"
+            name="email"
+            value="<%= form.email || '' %>"
+            autocomplete="email"
+            placeholder="correo@ejemplo.com"
+            required
           >
+
         </label>
 
-        <!-- Peso -->
+
+        <!-- TIPO DE CUENTA -->
+
         <label>
-          Peso (kg)
+
+          Tipo de cuenta
+
+          <select
+            name="role"
+            id="role"
+            required
+          >
+
+            <option
+              value="player"
+              <%= !form.role || form.role === 'player'
+                ? 'selected'
+                : '' %>
+            >
+              ⚽ Jugador
+            </option>
+
+            <option
+              value="guardian"
+              <%= form.role === 'guardian'
+                ? 'selected'
+                : '' %>
+            >
+              👨‍👩‍👦 Acudiente
+            </option>
+
+            <option
+              value="coach"
+              <%= form.role === 'coach'
+                ? 'selected'
+                : '' %>
+            >
+              📋 Entrenador
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <!-- ============================================================
+             MENSAJE SEGÚN EL TIPO DE CUENTA
+        ============================================================ -->
+
+        <div
+          id="roleMessage"
+          class="info-box"
+        >
+
+          <strong id="roleMessageTitle">
+            ⚽ Registro de jugador
+          </strong>
+
+          <p id="roleMessageText">
+            Completa tus datos deportivos. Tu cuenta quedará
+            pendiente de aprobación por parte del club.
+          </p>
+
+        </div>
+
+
+        <!-- ============================================================
+             DATOS DEL JUGADOR
+             SOLO PARA PLAYER
+        ============================================================ -->
+
+        <div id="playerFields">
+
+          <div class="form-section">
+
+            <span class="eyebrow">
+              DATOS DEL JUGADOR
+            </span>
+
+            <p class="muted">
+              Completa la información deportiva del jugador.
+            </p>
+
+          </div>
+
+
+          <!-- FECHA DE NACIMIENTO -->
+
+          <label>
+
+            Fecha de nacimiento
+
+            <input
+              type="date"
+              name="birth_date"
+              id="birth_date"
+              value="<%= form.birth_date || '' %>"
+            >
+
+            <small class="muted">
+              Debes tener entre 12 y 18 años.
+            </small>
+
+          </label>
+
+
+          <!-- POSICIÓN -->
+
+          <label>
+
+            Posición
+
+            <select
+              name="position"
+              id="position"
+            >
+
+              <option value="">
+                Selecciona tu posición
+              </option>
+
+              <option
+                value="goalkeeper"
+                <%= form.position === 'goalkeeper'
+                  ? 'selected'
+                  : '' %>
+              >
+                🧤 Arquero
+              </option>
+
+              <option
+                value="defender"
+                <%= form.position === 'defender'
+                  ? 'selected'
+                  : '' %>
+              >
+                🛡️ Defensor
+              </option>
+
+              <option
+                value="right_back"
+                <%= form.position === 'right_back'
+                  ? 'selected'
+                  : '' %>
+              >
+                Lateral derecho
+              </option>
+
+              <option
+                value="left_back"
+                <%= form.position === 'left_back'
+                  ? 'selected'
+                  : '' %>
+              >
+                Lateral izquierdo
+              </option>
+
+              <option
+                value="defensive_midfielder"
+                <%= form.position === 'defensive_midfielder'
+                  ? 'selected'
+                  : '' %>
+              >
+                Medio centro defensivo
+              </option>
+
+              <option
+                value="central_midfielder"
+                <%= form.position === 'central_midfielder'
+                  ? 'selected'
+                  : '' %>
+              >
+                Medio centro
+              </option>
+
+              <option
+                value="attacking_midfielder"
+                <%= form.position === 'attacking_midfielder'
+                  ? 'selected'
+                  : '' %>
+              >
+                Medio centro ofensivo
+              </option>
+
+              <option
+                value="right_midfielder"
+                <%= form.position === 'right_midfielder'
+                  ? 'selected'
+                  : '' %>
+              >
+                Medio centro derecho
+              </option>
+
+              <option
+                value="left_midfielder"
+                <%= form.position === 'left_midfielder'
+                  ? 'selected'
+                  : '' %>
+              >
+                Medio centro izquierdo
+              </option>
+
+              <option
+                value="right_winger"
+                <%= form.position === 'right_winger'
+                  ? 'selected'
+                  : '' %>
+                >
+                Extremo derecho
+              </option>
+
+              <option
+                value="left_winger"
+                <%= form.position === 'left_winger'
+                  ? 'selected'
+                  : '' %>
+              >
+                Extremo izquierdo
+              </option>
+
+              <option
+                value="striker"
+                <%= form.position === 'striker'
+                  ? 'selected'
+                  : '' %>
+              >
+                Delantero
+              </option>
+
+              <option
+                value="false_nine"
+                <%= form.position === 'false_nine'
+                  ? 'selected'
+                  : '' %>
+              >
+                Centro / Falso nueve
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <!-- DORSAL -->
+
+          <label>
+
+            Dorsal
+
+            <input
+              type="number"
+              name="dorsal"
+              id="dorsal"
+              value="<%= form.dorsal || '' %>"
+              min="1"
+              max="99"
+              placeholder="Ej: 10"
+            >
+
+            <small class="muted">
+              Número de camiseta entre 1 y 99.
+            </small>
+
+          </label>
+
+
+          <!-- PIE DOMINANTE -->
+
+          <label>
+
+            Pie dominante
+
+            <select
+              name="dominant_foot"
+              id="dominant_foot"
+            >
+
+              <option value="">
+                Selecciona tu pie dominante
+              </option>
+
+              <option
+                value="right"
+                <%= form.dominant_foot === 'right'
+                  ? 'selected'
+                  : '' %>
+              >
+                🦶 Derecho
+              </option>
+
+              <option
+                value="left"
+                <%= form.dominant_foot === 'left'
+                  ? 'selected'
+                  : '' %>
+              >
+                🦶 Izquierdo
+              </option>
+
+              <option
+                value="ambidextrous"
+                <%= form.dominant_foot === 'ambidextrous'
+                  ? 'selected'
+                  : '' %>
+              >
+                🦶 Ambidiestro
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <!-- ESTATURA Y PESO -->
+
+          <div class="form-row">
+
+            <label>
+
+              Estatura
+
+              <input
+                type="number"
+                name="height_cm"
+                id="height_cm"
+                value="<%= form.height_cm || '' %>"
+                min="50"
+                max="250"
+                step="0.1"
+                placeholder="Ej: 175"
+              >
+
+              <small class="muted">
+                Centímetros
+              </small>
+
+            </label>
+
+
+            <label>
+
+              Peso
+
+              <input
+                type="number"
+                name="weight_kg"
+                id="weight_kg"
+                value="<%= form.weight_kg || '' %>"
+                min="20"
+                max="250"
+                step="0.1"
+                placeholder="Ej: 68"
+              >
+
+              <small class="muted">
+                Kilogramos
+              </small>
+
+            </label>
+
+          </div>
+
+
+          <!-- CATEGORÍA AUTOMÁTICA -->
+
+          <div class="info-box">
+
+            <strong>
+              ⚽ Categoría automática
+            </strong>
+
+            <p>
+              No necesitas seleccionar tu categoría.
+              Elite Soccer la asignará automáticamente
+              según tu fecha de nacimiento.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <!-- ============================================================
+             SEGURIDAD
+        ============================================================ -->
+
+        <div class="form-section">
+
+          <span class="eyebrow">
+            SEGURIDAD
+          </span>
+
+        </div>
+
+
+        <!-- CONTRASEÑA -->
+
+        <label>
+
+          Contraseña
 
           <input
-            type="number"
-            name="weight_kg"
-            id="weight_kg"
-            value="<%= form.weight_kg || '' %>"
-            min="20"
-            max="180"
-            placeholder="Ej: 68"
-            step="0.1"
+            type="password"
+            name="password"
+            minlength="8"
+            autocomplete="new-password"
+            placeholder="Mínimo 8 caracteres"
+            required
           >
+
+          <small class="muted">
+            Mínimo 8 caracteres.
+          </small>
+
         </label>
 
-      </div>
 
-      <!-- ============================================================ -->
-      <!-- CONTRASEÑA -->
-      <!-- ============================================================ -->
+        <!-- CONFIRMAR CONTRASEÑA -->
 
-      <hr>
+        <label>
 
-      <h3>🔐 Seguridad</h3>
+          Confirmar contraseña
 
-      <label>
-        Contraseña (mínimo 8 caracteres)
+          <input
+            type="password"
+            name="confirm_password"
+            minlength="8"
+            autocomplete="new-password"
+            placeholder="Repite tu contraseña"
+            required
+          >
 
-        <input
-          type="password"
-          name="password"
-          minlength="8"
-          required
+        </label>
+
+
+        <!-- ============================================================
+             BOTÓN
+        ============================================================ -->
+
+        <button
+          class="btn full"
+          type="submit"
         >
-      </label>
+          CREAR CUENTA
+        </button>
 
-      <label>
-        Confirmar contraseña
+      </form>
 
-        <input
-          type="password"
-          name="confirm_password"
-          minlength="8"
-          required
-        >
-      </label>
 
-      <!-- ============================================================ -->
-      <!-- BOTÓN DE ENVÍO -->
-      <!-- ============================================================ -->
+      <!-- ============================================================
+           LOGIN
+      ============================================================ -->
 
-      <button
-        class="btn full"
-        type="submit"
-      >
-        REGISTRARSE
-      </button>
+      <p class="center muted">
 
-    </form>
-
-    <!-- ============================================================ -->
-    <!-- ENLACE A LOGIN -->
-    <!-- ============================================================ -->
-
-    <div class="register-link">
-
-      <p class="muted">
-        ¿Ya tienes cuenta?
+        ¿Ya tienes una cuenta?
 
         <a
           class="link-blue"
           href="/login"
         >
-          Inicia sesión
+          Iniciar sesión
         </a>
+
       </p>
 
-    </div>
+    <% } %>
 
   </div>
 
 </section>
 
-<!-- ============================================================ -->
-<!-- JAVASCRIPT: MOSTRAR/OCULTAR CAMPOS SEGÚN ROL -->
-<!-- ============================================================ -->
+
+<!-- ================================================================
+     JAVASCRIPT
+================================================================ -->
 
 <script>
-  (function() {
-    const roleSelect = document.getElementById('role');
-    const playerFields = document.getElementById('player-fields');
-    const coachCodeContainer = document.getElementById('coach-code-container');
 
-    // Campos que son obligatorios solo para jugadores
-    const playerRequired = ['dorsal', 'position', 'dominant_foot', 'birth_date', 'height_cm', 'weight_kg'];
+(function () {
 
-    function toggleFields() {
-      const role = roleSelect.value;
+  const roleSelect =
+    document.getElementById('role');
 
-      // Mostrar/ocultar campos de jugador
-      if (role === 'player') {
-        playerFields.style.display = 'block';
-        // Hacer campos obligatorios
-        playerRequired.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.required = true;
-        });
-      } else {
-        playerFields.style.display = 'none';
-        // Quitar required
-        playerRequired.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.required = false;
-        });
-      }
+  const playerFields =
+    document.getElementById('playerFields');
 
-      // Mostrar/ocultar código de invitación para entrenadores
-      if (role === 'coach') {
-        coachCodeContainer.style.display = 'block';
-        document.getElementById('invitation_code').required = true;
-      } else {
-        coachCodeContainer.style.display = 'none';
-        document.getElementById('invitation_code').required = false;
-      }
+  const roleMessageTitle =
+    document.getElementById('roleMessageTitle');
+
+  const roleMessageText =
+    document.getElementById('roleMessageText');
+
+  const birthDate =
+    document.getElementById('birth_date');
+
+  const position =
+    document.getElementById('position');
+
+  const dorsal =
+    document.getElementById('dorsal');
+
+  const dominantFoot =
+    document.getElementById('dominant_foot');
+
+  const heightCm =
+    document.getElementById('height_cm');
+
+  const weightKg =
+    document.getElementById('weight_kg');
+
+
+  function updateFields() {
+
+    const role = roleSelect.value;
+
+
+    /* ============================================================
+       JUGADOR
+    ============================================================ */
+
+    if (role === 'player') {
+
+      playerFields.style.display = 'block';
+
+      birthDate.required = true;
+      position.required = true;
+      dorsal.required = true;
+      dominantFoot.required = true;
+      heightCm.required = true;
+      weightKg.required = true;
+
+      roleMessageTitle.textContent =
+        '⚽ Registro de jugador';
+
+      roleMessageText.textContent =
+        'Completa tus datos deportivos. Tu cuenta quedará pendiente de aprobación por parte del club.';
+
     }
 
-    // Ejecutar al cargar
-    toggleFields();
 
-    // Ejecutar al cambiar el rol
-    roleSelect.addEventListener('change', toggleFields);
-  })();
+    /* ============================================================
+       ACUDIENTE
+    ============================================================ */
+
+    else if (role === 'guardian') {
+
+      playerFields.style.display = 'none';
+
+      birthDate.required = false;
+      position.required = false;
+      dorsal.required = false;
+      dominantFoot.required = false;
+      heightCm.required = false;
+      weightKg.required = false;
+
+      roleMessageTitle.textContent =
+        '👨‍👩‍👦 Registro de acudiente';
+
+      roleMessageText.textContent =
+        'Tu cuenta quedará pendiente de aprobación por parte del club.';
+
+    }
+
+
+    /* ============================================================
+       ENTRENADOR
+    ============================================================ */
+
+    else if (role === 'coach') {
+
+      playerFields.style.display = 'none';
+
+      birthDate.required = false;
+      position.required = false;
+      dorsal.required = false;
+      dominantFoot.required = false;
+      heightCm.required = false;
+      weightKg.required = false;
+
+      roleMessageTitle.textContent =
+        '📋 Registro de entrenador';
+
+      roleMessageText.textContent =
+        'La cuenta de entrenador se crea directamente como entrenador del club. No necesitas código de invitación ni aprobación.';
+
+    }
+
+  }
+
+
+  roleSelect.addEventListener(
+    'change',
+    updateFields
+  );
+
+
+  updateFields();
+
+})();
+
 </script>
+
 
 <%- include('../partials/footer') %>
