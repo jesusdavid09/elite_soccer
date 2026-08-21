@@ -1,0 +1,2097 @@
+import express, { Request, Response } from 'express';
+import session from 'express-session';
+import pgSession from 'connect-pg-simple';
+import path from 'node:path';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import bcrypt from 'bcryptjs';
+import multer from 'multer';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import 'dotenv/config';
+
+import { pool } from './db/pool';
+import { requireAuth, requireRole } from './middleware/auth';
+import { q, one, audit } from './utils/db';
+
+const app = express();
+
+const PORT = Number(process.env.PORT || 3000);
+const ROOT = path.join(__dirname, '..');
+
+const uploadDir = path.join(ROOT, 'uploads');
+fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: uploadDir,
+  filename: (_req, file, cb) => {
+    cb(
+      null,
+      `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${path
+        .extname(file.originalname)
+        .toLowerCase()}`
+    );
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  },
+  fileFilter: (_req, file, cb) => {
+    cb(
+      null,
+      /\.(png|jpe?g|webp|gif)$/i.test(
+        path.extname(file.originalname)
+      )
+    );
+  }
+});
+
+const PgStore = pgSession(session);
+
+app.set('view engine', 'ejs');
+app.set('views', path.join(ROOT, 'views'));
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false
+  })
+);
+
+app.use(morgan('dev'));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+app.use(express.static(path.join(ROOT, 'public')));
+app.use('/uploads', express.static(uploadDir));
+
+const SESSION_MAX_AGE = 1000 * 60 * 60 * 24 * 30;
+
+app.set(
+  'trust proxy',
+  process.env.NODE_ENV === 'production' ? 1 : 0
+);
+
+app.use(
+  session({
+    store: new PgStore({
+      pool,
+      tableName: 'sessions',
+      ttl: 30 * 24 * 60 * 60
+    }),
+    secret:
+      process.env.SESSION_SECRET ||
+      'dev-secret-change-me',
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: SESSION_MAX_AGE
+    }
+  })
+);
+
+/*
+|--------------------------------------------------------------------------
+| Helpers
+|--------------------------------------------------------------------------
+*/
+
+function calculateAge(birthDate: string): number {
+  const birth = new Date(`${birthDate}T00:00:00`);
+  const today = new Date();
+
+  let age =
+    today.getFullYear() -
+    birth.getFullYear();
+
+  const month = today.getMonth() - birth.getMonth();
+
+  if (
+    month < 0 ||
+    (month === 0 &&
+      today.getDate() < birth.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+}
+
+/*
+ * Categoría automática.
+ *
+ * IMPORTANTE:
+ * Aquí se utiliza la edad actual del jugador.
+ *
+ * 12 años -> Sub-12
+ * 13 años -> Sub-13
+ * 14 años -> Sub-14
+ * etc.
+ *
+ * Si quieres después cambiar el formato de categorías
+ * (por ejemplo Sub-13 = jugadores de 13 y 14 años),
+ * solamente modificamos esta función.
+ */
+async function getCategoryByAge(age: number) {
+  if (age < 12 || age > 18) {
+    return null;
+  }
+
+  const categoryName = `Sub-${age}`;
+
+  return await one<any>(
+    `
+    SELECT id, name
+    FROM categories
+    WHERE LOWER(name) = LOWER($1)
+      AND active = true
+    LIMIT 1
+    `,
+    [categoryName]
+  );
+}
+
+const render =
+  (view: string, data: any = {}) =>
+  (req: Request, res: Response) =>
+    res.render(view, data);
+
+/*
+|--------------------------------------------------------------------------
+| Variables globales
+|--------------------------------------------------------------------------
+*/
+
+app.use(async (req, res, next) => {
+  try {
+    res.locals.user =
+      req.session.user || null;
+
+    res.locals.clubName =
+      process.env.CLUB_NAME || 'Elite Soccer';
+
+    res.locals.path = req.path;
+
+    res.locals.unread = req.session.user
+      ? Number(
+          (
+            await one<{ count: number }>(
+              `
+              SELECT COUNT(*)::int AS count
+              FROM notifications
+              WHERE user_id = $1
+                AND read = false
+              `,
+              [req.session.user.id]
+            )
+          )?.count || 0
+        )
+      : 0;
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+/*
+|--------------------------------------------------------------------------
+| HOME
+|--------------------------------------------------------------------------
+*/
+
+app.get('/', async (req, res) => {
+  const matches = await q(`
+    SELECT
+      m.*,
+      c.name AS category_name
+    FROM matches m
+    LEFT JOIN categories c
+      ON c.id = m.category_id
+    WHERE m.status = 'scheduled'
+    ORDER BY match_date, match_time
+    LIMIT 3
+  `);
+
+  const news = await q(`
+    SELECT *
+    FROM news
+    WHERE published = true
+    ORDER BY
+      published_at DESC NULLS LAST,
+      created_at DESC
+    LIMIT 3
+  `);
+
+  const players = await q(`
+    SELECT
+      id,
+      full_name,
+      dorsal,
+      position,
+      photo_url
+    FROM players
+    WHERE active = true
+    ORDER BY full_name
+    LIMIT 8
+  `);
+
+  res.render('pages/home', {
+    matches,
+    news,
+    players
+  });
+});
+
+/*
+|--------------------------------------------------------------------------
+| EQUIPO
+|--------------------------------------------------------------------------
+*/
+
+app.get('/equipo', async (req, res) => {
+  const players = await q(`
+    SELECT
+      p.*,
+      c.name AS category_name
+    FROM players p
+    LEFT JOIN categories c
+      ON c.id = p.category_id
+    WHERE p.active = true
+    ORDER BY
+      c.name,
+      p.dorsal NULLS LAST,
+      p.full_name
+  `);
+
+  res.render('pages/team', {
+    players
+  });
+});
+
+/*
+|--------------------------------------------------------------------------
+| NOTICIAS
+|--------------------------------------------------------------------------
+*/
+
+app.get('/noticias', async (req, res) => {
+  const news = await q(`
+    SELECT
+      n.*,
+      u.name AS author_name
+    FROM news n
+    LEFT JOIN users u
+      ON u.id = n.author_id
+    WHERE n.published = true
+    ORDER BY
+      n.published_at DESC NULLS LAST,
+      n.created_at DESC
+  `);
+
+  res.render('pages/news', {
+    news
+  });
+});
+
+app.get('/noticias/:slug', async (req, res) => {
+  const item = await one(
+    `
+    SELECT
+      n.*,
+      u.name AS author_name
+    FROM news n
+    LEFT JOIN users u
+      ON u.id = n.author_id
+    WHERE slug = $1
+      AND published = true
+    `,
+    [req.params.slug]
+  );
+
+  if (!item) {
+    return res
+      .status(404)
+      .render('pages/error', {
+        title: 'Noticia no encontrada',
+        message: 'La noticia no existe.'
+      });
+  }
+
+  res.render('pages/news-detail', {
+    item
+  });
+});
+
+/*
+|--------------------------------------------------------------------------
+| GALERÍA
+|--------------------------------------------------------------------------
+*/
+
+app.get('/galeria', async (req, res) => {
+  const albums = await q(`
+    SELECT *
+    FROM gallery_albums
+    ORDER BY
+      event_date DESC NULLS LAST,
+      created_at DESC
+  `);
+
+  res.render('pages/gallery', {
+    albums
+  });
+});
+
+app.get(
+  '/galeria/admin',
+  requireRole('admin', 'coach'),
+  async (req, res) => {
+    const albums = await q(`
+      SELECT *
+      FROM gallery_albums
+      ORDER BY created_at DESC
+    `);
+
+    res.render('pages/gallery-admin', {
+      albums
+    });
+  }
+);
+
+app.post(
+  '/galeria/admin',
+  requireRole('admin', 'coach'),
+  upload.single('cover'),
+  async (req, res) => {
+    const b = req.body;
+
+    const cover = req.file
+      ? `/uploads/${req.file.filename}`
+      : b.cover_url || null;
+
+    const album = await one<any>(
+      `
+      INSERT INTO gallery_albums
+      (
+        name,
+        description,
+        event_date,
+        cover_url
+      )
+      VALUES ($1,$2,$3,$4)
+      RETURNING id
+      `,
+      [
+        b.name,
+        b.description || null,
+        b.event_date || null,
+        cover
+      ]
+    );
+
+    await audit(
+      req.session.user!.id,
+      'Crear álbum',
+      'gallery_album',
+      album?.id
+    );
+
+    res.redirect('/galeria/admin');
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| CALENDARIO
+|--------------------------------------------------------------------------
+*/
+
+app.get('/calendario', async (req, res) => {
+  const trainings = await q(`
+    SELECT
+      id,
+      title,
+      date,
+      start_time,
+      location,
+      'training' AS kind
+    FROM trainings
+  `);
+
+  const matches = await q(`
+    SELECT
+      id,
+      opponent AS match_title,
+      match_date AS date,
+      match_time AS start_time,
+      location,
+      'match' AS kind
+    FROM matches
+  `);
+
+  res.render('pages/calendar', {
+    events: [
+      ...trainings,
+      ...matches
+    ]
+  });
+});
+
+/*
+|--------------------------------------------------------------------------
+| TIENDA
+|--------------------------------------------------------------------------
+*/
+
+app.get('/tienda', async (req, res) => {
+  const products = await q(`
+    SELECT *
+    FROM products
+    WHERE active = true
+    ORDER BY created_at DESC
+  `);
+
+  res.render('pages/shop', {
+    products
+  });
+});
+
+/*
+|--------------------------------------------------------------------------
+| UNETE
+|--------------------------------------------------------------------------
+*/
+
+app.get('/unete', render('pages/join'));
+
+app.post('/unete', async (req, res) => {
+  await q(
+    `
+    INSERT INTO announcements
+    (
+      title,
+      message,
+      priority,
+      audience
+    )
+    VALUES
+    (
+      $1,
+      $2,
+      'high',
+      'admin'
+    )
+    `,
+    [
+      'Solicitud de prueba',
+      JSON.stringify(req.body)
+    ]
+  );
+
+  res.render('pages/success', {
+    title: 'Solicitud enviada',
+    message:
+      'Recibimos tu solicitud. Elite Soccer se pondrá en contacto contigo.'
+  });
+});
+
+/*
+|--------------------------------------------------------------------------
+| LOGIN
+|--------------------------------------------------------------------------
+*/
+
+app.get('/login', (req, res) => {
+  if (req.session.user) {
+    return res.redirect('/dashboard');
+  }
+
+  res.render('pages/login', {
+    error: null
+  });
+});
+
+/*
+|--------------------------------------------------------------------------
+| REGISTRO
+|--------------------------------------------------------------------------
+*/
+
+app.get('/registro', (req, res) => {
+  if (req.session.user) {
+    return res.redirect('/dashboard');
+  }
+
+  res.render('pages/register', {
+    error: null,
+    success: null,
+    form: {}
+  });
+});
+
+app.post('/registro', async (req, res) => {
+  const name = String(req.body.name || '').trim();
+
+  const email = String(
+    req.body.email || ''
+  )
+    .trim()
+    .toLowerCase();
+
+  const password = String(
+    req.body.password || ''
+  );
+
+  const confirm = String(
+    req.body.confirm_password || ''
+  );
+
+  const role =
+    req.body.role === 'guardian'
+      ? 'guardian'
+      : 'player';
+
+  /*
+   * Datos del jugador
+   */
+  const dorsalRaw = String(
+    req.body.dorsal || ''
+  ).trim();
+
+  const position = String(
+    req.body.position || ''
+  ).trim();
+
+  const dominantFoot = String(
+    req.body.dominant_foot || ''
+  ).trim();
+
+  const birthDate = String(
+    req.body.birth_date || ''
+  ).trim();
+
+  const heightRaw = String(
+    req.body.height_cm || ''
+  ).trim();
+
+  const weightRaw = String(
+    req.body.weight_kg || ''
+  ).trim();
+
+  const form = {
+    name,
+    email,
+    role,
+    dorsal: dorsalRaw,
+    position,
+    dominant_foot: dominantFoot,
+    birth_date: birthDate,
+    height_cm: heightRaw,
+    weight_kg: weightRaw
+  };
+
+  /*
+   * Validaciones generales
+   */
+
+  if (
+    name.length < 3 ||
+    name.length > 120
+  ) {
+    return res
+      .status(400)
+      .render('pages/register', {
+        error:
+          'El nombre debe tener entre 3 y 120 caracteres.',
+        success: null,
+        form
+      });
+  }
+
+  if (
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+      email
+    )
+  ) {
+    return res
+      .status(400)
+      .render('pages/register', {
+        error:
+          'Introduce un correo electrónico válido.',
+        success: null,
+        form
+      });
+  }
+
+  if (password.length < 8) {
+    return res
+      .status(400)
+      .render('pages/register', {
+        error:
+          'La contraseña debe tener al menos 8 caracteres.',
+        success: null,
+        form
+      });
+  }
+
+  if (password !== confirm) {
+    return res
+      .status(400)
+      .render('pages/register', {
+        error:
+          'Las contraseñas no coinciden.',
+        success: null,
+        form
+      });
+  }
+
+  /*
+   * Si es jugador, validamos sus datos.
+   */
+
+  let dorsal: number | null = null;
+  let height: number | null = null;
+  let weight: number | null = null;
+  let age: number | null = null;
+  let category: any = null;
+
+  if (role === 'player') {
+    if (!dorsalRaw) {
+      return res
+        .status(400)
+        .render('pages/register', {
+          error:
+            'Debes indicar tu dorsal.',
+          success: null,
+          form
+        });
+    }
+
+    dorsal = Number(dorsalRaw);
+
+    if (
+      !Number.isInteger(dorsal) ||
+      dorsal < 1 ||
+      dorsal > 99
+    ) {
+      return res
+        .status(400)
+        .render('pages/register', {
+          error:
+            'El dorsal debe ser un número entre 1 y 99.',
+          success: null,
+          form
+        });
+    }
+
+    if (!position) {
+      return res
+        .status(400)
+        .render('pages/register', {
+          error:
+            'Debes seleccionar tu posición.',
+          success: null,
+          form
+        });
+    }
+
+    if (!dominantFoot) {
+      return res
+        .status(400)
+        .render('pages/register', {
+          error:
+            'Debes seleccionar tu pierna dominante.',
+          success: null,
+          form
+        });
+    }
+
+    if (!birthDate) {
+      return res
+        .status(400)
+        .render('pages/register', {
+          error:
+            'Debes indicar tu fecha de nacimiento.',
+          success: null,
+          form
+        });
+    }
+
+    age = calculateAge(birthDate);
+
+    if (age < 12 || age > 18) {
+      return res
+        .status(400)
+        .render('pages/register', {
+          error:
+            'Elite Soccer actualmente registra jugadores entre 12 y 18 años.',
+          success: null,
+          form
+        });
+    }
+
+    if (!heightRaw) {
+      return res
+        .status(400)
+        .render('pages/register', {
+          error:
+            'Debes indicar tu altura.',
+          success: null,
+          form
+        });
+    }
+
+    if (!weightRaw) {
+      return res
+        .status(400)
+        .render('pages/register', {
+          error:
+            'Debes indicar tu peso.',
+          success: null,
+          form
+        });
+    }
+
+    height = Number(heightRaw);
+    weight = Number(weightRaw);
+
+    if (
+      !Number.isFinite(height) ||
+      height < 100 ||
+      height > 230
+    ) {
+      return res
+        .status(400)
+        .render('pages/register', {
+          error:
+            'La altura debe estar entre 100 y 230 cm.',
+          success: null,
+          form
+        });
+    }
+
+    if (
+      !Number.isFinite(weight) ||
+      weight < 20 ||
+      weight > 180
+    ) {
+      return res
+        .status(400)
+        .render('pages/register', {
+          error:
+            'El peso debe estar entre 20 y 180 kg.',
+          success: null,
+          form
+        });
+    }
+
+    /*
+     * Categoría automática.
+     */
+    category =
+      await getCategoryByAge(age);
+
+    if (!category) {
+      return res
+        .status(500)
+        .render('pages/register', {
+          error:
+            `No existe una categoría activa para la edad ${age}. Verifica la tabla categories.`,
+          success: null,
+          form
+        });
+    }
+  }
+
+  try {
+    /*
+     * Verificar correo.
+     */
+    const exists = await one<any>(
+      `
+      SELECT id
+      FROM users
+      WHERE lower(email) = lower($1)
+      `,
+      [email]
+    );
+
+    if (exists) {
+      return res
+        .status(409)
+        .render('pages/register', {
+          error:
+            'Ya existe una cuenta con ese correo.',
+          success: null,
+          form
+        });
+    }
+
+    /*
+     * Si es jugador, verificar dorsal.
+     */
+    if (role === 'player' && dorsal !== null) {
+      const dorsalExists = await one<any>(
+        `
+        SELECT id
+        FROM players
+        WHERE dorsal = $1
+          AND active = true
+        LIMIT 1
+        `,
+        [dorsal]
+      );
+
+      if (dorsalExists) {
+        return res
+          .status(409)
+          .render('pages/register', {
+            error:
+              'Ese dorsal ya está siendo utilizado por otro jugador.',
+            success: null,
+            form
+          });
+      }
+    }
+
+    /*
+     * Crear contraseña.
+     */
+    const hash = await bcrypt.hash(
+      password,
+      12
+    );
+
+    /*
+     * Crear usuario.
+     *
+     * approved = false
+     */
+    const u = await one<any>(
+      `
+      INSERT INTO users
+      (
+        name,
+        email,
+        password_hash,
+        role,
+        approved
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        $3,
+        $4,
+        false
+      )
+      RETURNING id
+      `,
+      [
+        name,
+        email,
+        hash,
+        role
+      ]
+    );
+
+    if (!u) {
+      throw new Error(
+        'No se pudo crear el usuario.'
+      );
+    }
+
+    /*
+     * Si es jugador, crear inmediatamente
+     * su ficha en players.
+     *
+     * Esto permite guardar todos los datos
+     * mientras espera aprobación.
+     */
+    if (
+      role === 'player' &&
+      category
+    ) {
+      await q(
+        `
+        INSERT INTO players
+        (
+          user_id,
+          full_name,
+          dorsal,
+          position,
+          dominant_foot,
+          birth_date,
+          height_cm,
+          weight_kg,
+          category_id,
+          active,
+          approved
+        )
+        VALUES
+        (
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8,
+          $9,
+          true,
+          false
+        )
+        `,
+        [
+          u.id,
+          name,
+          dorsal,
+          position,
+          dominantFoot,
+          birthDate,
+          height,
+          weight,
+          category.id
+        ]
+      );
+    }
+
+    await audit(
+      u.id,
+      'Solicitud de registro',
+      'user',
+      u.id,
+      {
+        role,
+        age,
+        category:
+          category?.name || null
+      }
+    );
+
+    return res.render(
+      'pages/register',
+      {
+        error: null,
+        success:
+          'Tu solicitud fue creada correctamente. Un administrador de Elite Soccer debe aprobar tu cuenta antes de que puedas iniciar sesión.',
+        form: {}
+      }
+    );
+  } catch (error) {
+    console.error(
+      'Error en registro:',
+      error
+    );
+
+    return res
+      .status(500)
+      .render('pages/register', {
+        error:
+          'No se pudo crear la cuenta. Inténtalo nuevamente.',
+        success: null,
+        form
+      });
+  }
+});
+
+/*
+|--------------------------------------------------------------------------
+| LOGIN
+|--------------------------------------------------------------------------
+*/
+
+app.post('/login', async (req, res) => {
+  try {
+    const email = String(
+      req.body.email || ''
+    )
+      .trim()
+      .toLowerCase();
+
+    const password = String(
+      req.body.password || ''
+    );
+
+    const u = await one<any>(
+      `
+      SELECT
+        id,
+        name,
+        email,
+        password_hash,
+        role,
+        approved,
+        active
+      FROM users
+      WHERE lower(email) = lower($1)
+      LIMIT 1
+      `,
+      [email]
+    );
+
+    if (
+      !u ||
+      !u.active ||
+      !(await bcrypt.compare(
+        password,
+        u.password_hash
+      ))
+    ) {
+      return res
+        .status(401)
+        .render('pages/login', {
+          error:
+            'Correo o contraseña incorrectos.'
+        });
+    }
+
+    if (!u.approved) {
+      return res
+        .status(403)
+        .render('pages/login', {
+          error:
+            'Tu cuenta está pendiente de aprobación por parte de Elite Soccer.'
+        });
+    }
+
+    req.session.regenerate(
+      async err => {
+        if (err) {
+          console.error(
+            'Error creando sesión:',
+            err
+          );
+
+          return res
+            .status(500)
+            .render('pages/login', {
+              error:
+                'No se pudo iniciar sesión. Inténtalo nuevamente.'
+            });
+        }
+
+        req.session.user = {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role
+        };
+
+        req.session.cookie.maxAge =
+          SESSION_MAX_AGE;
+
+        await audit(
+          u.id,
+          'Inicio de sesión',
+          'user',
+          u.id
+        );
+
+        req.session.save(
+          saveErr => {
+            if (saveErr) {
+              console.error(
+                'Error guardando sesión:',
+                saveErr
+              );
+
+              return res
+                .status(500)
+                .render('pages/login', {
+                  error:
+                    'No se pudo guardar la sesión. Inténtalo nuevamente.'
+                });
+            }
+
+            res.redirect('/dashboard');
+          }
+        );
+      }
+    );
+  } catch (error) {
+    console.error(
+      'Error en login:',
+      error
+    );
+
+    return res
+      .status(500)
+      .render('pages/login', {
+        error:
+          'Ocurrió un error al iniciar sesión.'
+      });
+  }
+});
+
+/*
+|--------------------------------------------------------------------------
+| LOGOUT
+|--------------------------------------------------------------------------
+*/
+
+app.post(
+  '/logout',
+  requireAuth,
+  (req, res) => {
+    req.session.destroy(() => {
+      res.redirect('/');
+    });
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  '/dashboard',
+  requireAuth,
+  async (req, res) => {
+    const [
+      players,
+      trainings,
+      matches,
+      orders,
+      payments
+    ] = await Promise.all([
+      q<any>(
+        `
+        SELECT COUNT(*)::int count
+        FROM players
+        WHERE active = true
+        `
+      ),
+
+      q(
+        `
+        SELECT *
+        FROM trainings
+        WHERE date >= CURRENT_DATE
+        ORDER BY date,start_time
+        LIMIT 5
+        `
+      ),
+
+      q(
+        `
+        SELECT *
+        FROM matches
+        WHERE match_date >= CURRENT_DATE
+        ORDER BY match_date,match_time
+        LIMIT 5
+        `
+      ),
+
+      q<any>(
+        `
+        SELECT COUNT(*)::int count
+        FROM orders
+        WHERE status IN
+        (
+          'pending',
+          'confirmed',
+          'production'
+        )
+        `
+      ),
+
+      q<any>(
+        `
+        SELECT COUNT(*)::int count
+        FROM payments
+        WHERE status IN
+        (
+          'pending',
+          'overdue'
+        )
+        `
+      )
+    ]);
+
+    res.render('pages/dashboard', {
+      stats: {
+        players:
+          players[0]?.count || 0,
+        orders:
+          orders[0]?.count || 0,
+        payments:
+          payments[0]?.count || 0
+      },
+      trainings,
+      matches
+    });
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| JUGADORES
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  '/jugadores',
+  requireAuth,
+  async (req, res) => {
+    const players = await q(`
+      SELECT
+        p.*,
+        c.name AS category_name
+      FROM players p
+      LEFT JOIN categories c
+        ON c.id = p.category_id
+      WHERE p.active = true
+      ORDER BY p.full_name
+    `);
+
+    res.render('pages/players', {
+      players
+    });
+  }
+);
+
+/*
+ * Crear jugador manualmente desde administración.
+ *
+ * IMPORTANTE:
+ * Ya NO recibe category_id.
+ * La categoría se calcula mediante la fecha de nacimiento.
+ */
+
+app.get(
+  '/jugadores/nuevo',
+  requireRole('admin', 'coach'),
+  async (req, res) => {
+    res.render('pages/player-form', {
+      player: null
+    });
+  }
+);
+
+app.post(
+  '/jugadores',
+  requireRole('admin', 'coach'),
+  upload.single('photo'),
+  async (req, res) => {
+    try {
+      const b = req.body;
+
+      const photo = req.file
+        ? `/uploads/${req.file.filename}`
+        : b.photo_url || null;
+
+      const birthDate = String(
+        b.birth_date || ''
+      ).trim();
+
+      if (!birthDate) {
+        return res.status(400).send(
+          'La fecha de nacimiento es obligatoria.'
+        );
+      }
+
+      const age =
+        calculateAge(birthDate);
+
+      const category =
+        await getCategoryByAge(age);
+
+      if (!category) {
+        return res.status(400).send(
+          'No existe una categoría para la edad del jugador.'
+        );
+      }
+
+      const dorsal = b.dorsal
+        ? Number(b.dorsal)
+        : null;
+
+      if (
+        dorsal !== null &&
+        (!Number.isInteger(dorsal) ||
+          dorsal < 1 ||
+          dorsal > 99)
+      ) {
+        return res.status(400).send(
+          'Dorsal inválido.'
+        );
+      }
+
+      const p = await one<any>(
+        `
+        INSERT INTO players
+        (
+          full_name,
+          dorsal,
+          position,
+          dominant_foot,
+          birth_date,
+          height_cm,
+          weight_kg,
+          category_id,
+          photo_url
+        )
+        VALUES
+        (
+          $1,$2,$3,$4,$5,$6,$7,$8,$9
+        )
+        RETURNING id
+        `,
+        [
+          b.full_name,
+          dorsal,
+          b.position || null,
+          b.dominant_foot || null,
+          birthDate,
+          b.height_cm || null,
+          b.weight_kg || null,
+          category.id,
+          photo
+        ]
+      );
+
+      await audit(
+        req.session.user!.id,
+        'Crear jugador',
+        'player',
+        p?.id
+      );
+
+      res.redirect('/jugadores');
+    } catch (error) {
+      console.error(
+        'Error creando jugador:',
+        error
+      );
+
+      res.status(500).send(
+        'No se pudo crear el jugador.'
+      );
+    }
+  }
+);
+
+app.post(
+  '/jugadores/:id/desactivar',
+  requireRole('admin', 'coach'),
+  async (req, res) => {
+    await q(
+      `
+      UPDATE players
+      SET active = false
+      WHERE id = $1
+      `,
+      [req.params.id]
+    );
+
+    await audit(
+      req.session.user!.id,
+      'Desactivar jugador',
+      'player',
+      Number(req.params.id)
+    );
+
+    res.redirect('/jugadores');
+  }
+);
+
+app.get(
+  '/jugadores/:id',
+  requireAuth,
+  async (req, res) => {
+    const player = await one<any>(
+      `
+      SELECT
+        p.*,
+        c.name AS category_name
+      FROM players p
+      LEFT JOIN categories c
+        ON c.id = p.category_id
+      WHERE p.id = $1
+      `,
+      [req.params.id]
+    );
+
+    if (!player) {
+      return res
+        .status(404)
+        .render('pages/error', {
+          title:
+            'Jugador no encontrado',
+          message: ''
+        });
+    }
+
+    const evaluations = await q(
+      `
+      SELECT
+        e.*,
+        u.name evaluator_name
+      FROM player_evaluations e
+      LEFT JOIN users u
+        ON u.id = e.evaluator_id
+      WHERE player_id = $1
+      ORDER BY evaluated_at DESC
+      `,
+      [req.params.id]
+    );
+
+    const stats = await one<any>(
+      `
+      SELECT
+        COUNT(DISTINCT ce.match_id)::int matches,
+        COUNT(*) FILTER (
+          WHERE ce.event_type='goal'
+        )::int goals,
+        COUNT(*) FILTER (
+          WHERE ce.event_type='assist'
+        )::int assists,
+        COUNT(*) FILTER (
+          WHERE ce.event_type='mvp'
+        )::int mvps
+      FROM match_events ce
+      WHERE ce.player_id = $1
+      `,
+      [req.params.id]
+    );
+
+    res.render(
+      'pages/player-detail',
+      {
+        player,
+        evaluations,
+        stats:
+          stats || {
+            matches: 0,
+            goals: 0,
+            assists: 0,
+            mvps: 0
+          }
+      }
+    );
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| USUARIOS / APROBACIONES
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  '/usuarios',
+  requireRole('admin'),
+  async (req, res) => {
+    const users = await q(`
+      SELECT
+        id,
+        name,
+        email,
+        role,
+        active,
+        approved,
+        created_at
+      FROM users
+      ORDER BY
+        approved ASC,
+        created_at DESC
+    `);
+
+    res.render('pages/users', {
+      users
+    });
+  }
+);
+
+app.post(
+  '/usuarios',
+  requireRole('admin'),
+  async (req, res) => {
+    const b = req.body;
+
+    const hash = await bcrypt.hash(
+      b.password,
+      12
+    );
+
+    await q(
+      `
+      INSERT INTO users
+      (
+        name,
+        email,
+        password_hash,
+        role,
+        approved
+      )
+      VALUES
+      (
+        $1,$2,$3,$4,true
+      )
+      `,
+      [
+        b.name,
+        b.email,
+        hash,
+        b.role || 'player'
+      ]
+    );
+
+    res.redirect('/usuarios');
+  }
+);
+
+/*
+ * APROBAR REGISTRO
+ *
+ * El jugador ya fue creado durante el registro.
+ * Aquí solamente aprobamos users y players.
+ */
+
+app.post(
+  '/usuarios/:id/aprobar',
+  requireRole('admin'),
+  async (req, res) => {
+    const client =
+      await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const userResult =
+        await client.query(
+          `
+          SELECT
+            id,
+            name,
+            role
+          FROM users
+          WHERE id = $1
+            AND approved = false
+          `,
+          [req.params.id]
+        );
+
+      if (
+        !userResult.rows.length
+      ) {
+        await client.query(
+          'ROLLBACK'
+        );
+
+        return res.redirect(
+          '/usuarios'
+        );
+      }
+
+      const user =
+        userResult.rows[0];
+
+      /*
+       * Aprobar usuario.
+       */
+      await client.query(
+        `
+        UPDATE users
+        SET approved = true
+        WHERE id = $1
+        `,
+        [req.params.id]
+      );
+
+      /*
+       * Aprobar jugador.
+       */
+      if (
+        user.role === 'player'
+      ) {
+        await client.query(
+          `
+          UPDATE players
+          SET approved = true
+          WHERE user_id = $1
+          `,
+          [req.params.id]
+        );
+      }
+
+      await client.query(
+        'COMMIT'
+      );
+
+      await audit(
+        req.session.user!.id,
+        'Aprobar registro',
+        'user',
+        Number(req.params.id)
+      );
+
+      res.redirect(
+        '/usuarios'
+      );
+    } catch (error) {
+      await client.query(
+        'ROLLBACK'
+      );
+
+      console.error(
+        'Error aprobando registro:',
+        error
+      );
+
+      res.redirect(
+        '/usuarios'
+      );
+    } finally {
+      client.release();
+    }
+  }
+);
+
+app.post(
+  '/usuarios/:id/rechazar',
+  requireRole('admin'),
+  async (req, res) => {
+    const id =
+      Number(req.params.id);
+
+    if (
+      id === req.session.user!.id
+    ) {
+      return res.redirect(
+        '/usuarios'
+      );
+    }
+
+    await q(
+      `
+      DELETE FROM users
+      WHERE id = $1
+        AND approved = false
+      `,
+      [id]
+    );
+
+    await audit(
+      req.session.user!.id,
+      'Rechazar registro',
+      'user',
+      id
+    );
+
+    res.redirect(
+      '/usuarios'
+    );
+  }
+);
+
+app.post(
+  '/usuarios/:id/toggle',
+  requireRole('admin'),
+  async (req, res) => {
+    await q(
+      `
+      UPDATE users
+      SET active = NOT active
+      WHERE id = $1
+      `,
+      [req.params.id]
+    );
+
+    res.redirect(
+      '/usuarios'
+    );
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| RESTO DEL SISTEMA
+|--------------------------------------------------------------------------
+|
+| Mantén aquí tus rutas actuales:
+| entrenamientos
+| partidos
+| convocatorias
+| tácticas
+| evaluaciones
+| torneos
+| notificaciones
+| anuncios
+| reglamento
+| tienda
+| pedidos
+| pagos
+| reportes
+| configuración
+| auditoría
+|
+|--------------------------------------------------------------------------
+*/
+
+/*
+ * ENTRENAMIENTOS
+ */
+
+app.get(
+  '/entrenamientos',
+  requireAuth,
+  async (req, res) => {
+    const trainings = await q(`
+      SELECT
+        t.*,
+        c.name category_name
+      FROM trainings t
+      LEFT JOIN categories c
+        ON c.id = t.category_id
+      ORDER BY
+        t.date DESC,
+        t.start_time DESC
+    `);
+
+    res.render('pages/trainings', {
+      trainings
+    });
+  }
+);
+
+app.get(
+  '/entrenamientos/nuevo',
+  requireRole('admin', 'coach'),
+  async (req, res) => {
+    const categories =
+      await q(`
+        SELECT *
+        FROM categories
+        WHERE active = true
+        ORDER BY name
+      `);
+
+    res.render(
+      'pages/training-form',
+      {
+        categories
+      }
+    );
+  }
+);
+
+app.post(
+  '/entrenamientos',
+  requireRole('admin', 'coach'),
+  async (req, res) => {
+    const b = req.body;
+
+    const t = await one<any>(
+      `
+      INSERT INTO trainings
+      (
+        title,
+        training_type,
+        date,
+        start_time,
+        location,
+        duration_minutes,
+        objective,
+        notes,
+        category_id,
+        created_by
+      )
+      VALUES
+      (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10
+      )
+      RETURNING id
+      `,
+      [
+        b.title,
+        b.training_type,
+        b.date,
+        b.start_time,
+        b.location || null,
+        b.duration_minutes || null,
+        b.objective || null,
+        b.notes || null,
+        b.category_id || null,
+        req.session.user!.id
+      ]
+    );
+
+    const players =
+      await q<any>(
+        `
+        SELECT id
+        FROM players
+        WHERE active = true
+        ${
+          b.category_id
+            ? 'AND category_id=$1'
+            : ''
+        }
+        `,
+        b.category_id
+          ? [b.category_id]
+          : []
+      );
+
+    for (const p of players) {
+      await q(
+        `
+        INSERT INTO attendance
+        (
+          training_id,
+          player_id
+        )
+        VALUES
+        ($1,$2)
+        ON CONFLICT DO NOTHING
+        `,
+        [t?.id, p.id]
+      );
+    }
+
+    await audit(
+      req.session.user!.id,
+      'Crear entrenamiento',
+      'training',
+      t?.id
+    );
+
+    res.redirect(
+      '/entrenamientos'
+    );
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| PARTIDOS
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  '/partidos',
+  requireAuth,
+  async (req, res) => {
+    const matches = await q(`
+      SELECT
+        m.*,
+        c.name category_name
+      FROM matches m
+      LEFT JOIN categories c
+        ON c.id = m.category_id
+      ORDER BY
+        match_date DESC,
+        match_time DESC
+    `);
+
+    res.render(
+      'pages/matches',
+      { matches }
+    );
+  }
+);
+
+app.get(
+  '/partidos/nuevo',
+  requireRole('admin', 'coach'),
+  async (req, res) => {
+    const categories =
+      await q(`
+        SELECT *
+        FROM categories
+        WHERE active = true
+        ORDER BY name
+      `);
+
+    res.render(
+      'pages/match-form',
+      { categories }
+    );
+  }
+);
+
+app.post(
+  '/partidos',
+  requireRole('admin', 'coach'),
+  async (req, res) => {
+    const b = req.body;
+
+    const m = await one<any>(
+      `
+      INSERT INTO matches
+      (
+        opponent,
+        match_date,
+        match_time,
+        location,
+        competition,
+        category_id,
+        home_away,
+        status,
+        notes,
+        created_by
+      )
+      VALUES
+      (
+        $1,$2,$3,$4,$5,$6,$7,
+        'scheduled',
+        $8,$9
+      )
+      RETURNING id
+      `,
+      [
+        b.opponent,
+        b.match_date,
+        b.match_time || null,
+        b.location || null,
+        b.competition || null,
+        b.category_id || null,
+        b.home_away || 'home',
+        b.notes || null,
+        req.session.user!.id
+      ]
+    );
+
+    await audit(
+      req.session.user!.id,
+      'Crear partido',
+      'match',
+      m?.id
+    );
+
+    res.redirect(
+      '/partidos'
+    );
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| NOTIFICACIONES
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  '/notificaciones',
+  requireAuth,
+  async (req, res) => {
+    const notifications =
+      await q(
+        `
+        SELECT *
+        FROM notifications
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        `,
+        [req.session.user!.id]
+      );
+
+    await q(
+      `
+      UPDATE notifications
+      SET read = true
+      WHERE user_id = $1
+      `,
+      [req.session.user!.id]
+    );
+
+    res.render(
+      'pages/notifications',
+      { notifications }
+    );
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| HEALTH
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  '/api/health',
+  (_req, res) =>
+    res.json({
+      ok: true,
+      service: 'Elite Soccer',
+      version: '2.1.0'
+    })
+);
+
+app.get(
+  '/manifest.json',
+  (_req, res) =>
+    res.sendFile(
+      path.join(
+        ROOT,
+        'public',
+        'manifest.json'
+      )
+    )
+);
+
+/*
+|--------------------------------------------------------------------------
+| 404
+|--------------------------------------------------------------------------
+*/
+
+app.use(
+  (_req, res) =>
+    res
+      .status(404)
+      .render('pages/error', {
+        title:
+          'Página no encontrada',
+        message:
+          'La ruta que buscas no existe.'
+      })
+);
+
+/*
+|--------------------------------------------------------------------------
+| ERROR
+|--------------------------------------------------------------------------
+*/
+
+app.use(
+  (
+    err: any,
+    _req: Request,
+    res: Response,
+    _next: any
+  ) => {
+    console.error(err);
+
+    res
+      .status(500)
+      .render('pages/error', {
+        title: 'Error del servidor',
+        message:
+          process.env.NODE_ENV ===
+          'production'
+            ? 'Ha ocurrido un error.'
+            : 'Revisa la consola para más detalles.'
+      });
+  }
+);
+
+app.listen(
+  PORT,
+  () =>
+    console.log(
+      `Elite Soccer: http://localhost:${PORT}`
+    )
+);

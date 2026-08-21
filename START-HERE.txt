@@ -1,0 +1,29 @@
+ELITE SOCCER — INICIO RAPIDO
+
+1. Instala Node.js 20+.
+2. Abre esta carpeta en VS Code.
+3. Ejecuta: npm install
+4. Copia .env.example a .env.
+5. Configura DATABASE_URL de PostgreSQL/Neon.
+6. Ejecuta: npm run build
+7. Ejecuta: npm run db:init
+8. Ejecuta: npm run db:seed
+9. Ejecuta: npm run dev
+10. Abre http://localhost:3000
+
+Credenciales seed:
+Admin: admin@elitesoccer.local / Admin123!
+Coach: coach@elitesoccer.local / Admin123!
+
+Documentacion completa: README.md y DEPENDENCIAS.md
+
+
+REGISTRO
+--------
+Si la base de Neon ya existía antes de esta versión, ejecuta una vez:
+npm run db:migrate
+Luego:
+npm run build
+npm run dev
+Registro público: http://localhost:3000/registro
+Aprobaciones: entra como administrador y abre http://localhost:3000/usuarios

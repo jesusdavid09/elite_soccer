@@ -1,0 +1,1 @@
+<%- include('../partials/header',{title:'Configuración'}) %><div class="page-head"><h1>Configuración del club</h1></div><form method="post" class="panel form"><%settings.forEach(s=>{%><label><%=s.key%><input name="<%=s.key%>" value="<%=s.value%>"></label><%})%><button class="btn">Guardar cambios</button></form><%- include('../partials/footer') %>

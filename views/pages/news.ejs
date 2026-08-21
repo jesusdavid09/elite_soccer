@@ -1,0 +1,4 @@
+<%- include('../partials/header',{title:'Noticias'}) %>
+<div class="page-head"><div><span class="eyebrow">ELITE NEWS</span><h1>Noticias</h1></div></div>
+<div class="grid cards"><% news.forEach(n=>{ %><a class="card" href="/noticias/<%=n.slug%>"><%if(n.image_url){%><img class="news-img" src="<%=n.image_url%>"><%}%><span>NOTICIA</span><h3><%=n.title%></h3><p><%=n.excerpt||''%></p></a><% }) %></div>
+<%- include('../partials/footer') %>

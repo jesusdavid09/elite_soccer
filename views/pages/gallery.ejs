@@ -1,0 +1,1 @@
+<%- include('../partials/header',{title:'Galería'}) %><div class="page-head"><h1>Galería Elite Soccer</h1></div><div class="grid cards"><%albums.forEach(a=>{%><article class="card"><h3><%=a.name%></h3><p><%=a.description||''%></p><small><%=a.event_date?a.event_date.toLocaleDateString('es-CO'):''%></small></article><%})%></div><%- include('../partials/footer') %>

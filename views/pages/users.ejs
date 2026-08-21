@@ -1,0 +1,15 @@
+<%- include('../partials/header',{title:'Usuarios'}) %>
+<div class="page-head"><div><span class="eyebrow">ADMINISTRACIÓN</span><h1>Usuarios y registros</h1><p class="muted">Aprueba o rechaza las solicitudes de jugadores y acudientes.</p></div></div>
+<div class="panel">
+  <div class="section-head"><div><h2>Solicitudes pendientes</h2><p class="muted">Las cuentas nuevas no pueden iniciar sesión hasta ser aprobadas.</p></div></div>
+  <div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Tipo</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>
+  <% const pending=users.filter(u=>!u.approved); if(!pending.length){ %><tr><td colspan="5" class="muted">No hay solicitudes pendientes.</td></tr><% } %>
+  <% pending.forEach(u=>{ %><tr><td><strong><%=u.name%></strong></td><td><%=u.email%></td><td><%=u.role==='player'?'⚽ Jugador':'👨‍👩‍👦 Acudiente'%></td><td><%=new Date(u.created_at).toLocaleDateString('es-CO')%></td><td><div class="actions"><form method="post" action="/usuarios/<%=u.id%>/aprobar"><button class="btn tiny">Aprobar</button></form><form method="post" action="/usuarios/<%=u.id%>/rechazar" onsubmit="return confirm('¿Rechazar esta solicitud?')"><button class="ghost tiny">Rechazar</button></form></div></td></tr><% }) %>
+  </tbody></table></div>
+</div>
+<div class="panel">
+  <div class="section-head"><div><h2>Crear usuario manualmente</h2><p class="muted">Para entrenadores, administradores o cuentas creadas directamente por el club.</p></div></div>
+  <form method="post" class="form grid-form"><label>Nombre<input name="name" required></label><label>Correo<input name="email" type="email" required></label><label>Contraseña<input name="password" minlength="8" required></label><label>Rol<select name="role"><option value="player">Jugador</option><option value="guardian">Acudiente</option><option value="coach">Entrenador</option><option value="admin">Administrador</option></select></label><button class="btn">CREAR USUARIO</button></form>
+</div>
+<div class="panel"><h2>Usuarios registrados</h2><div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Activo</th><th></th></tr></thead><tbody><%users.filter(u=>u.approved).forEach(u=>{%><tr><td><%=u.name%></td><td><%=u.email%></td><td><%=u.role%></td><td><span class="chip">Aprobado</span></td><td><%=u.active?'Sí':'No'%></td><td><form method="post" action="/usuarios/<%=u.id%>/toggle"><button class="ghost tiny">Cambiar</button></form></td></tr><%})%></tbody></table></div></div>
+<%- include('../partials/footer') %>

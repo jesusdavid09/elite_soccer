@@ -1,0 +1,1 @@
+<%- include('../partials/header',{title:'Notificaciones'}) %><div class="page-head"><h1>Notificaciones</h1></div><div class="panel"><%notifications.forEach(n=>{%><div class="list-row"><div><strong><%=n.title%></strong><small><%=n.message%></small></div><time><%=n.created_at.toLocaleString('es-CO')%></time></div><%})%></div><%- include('../partials/footer') %>

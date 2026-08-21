@@ -1,0 +1,22 @@
+<%- include('../partials/header',{title:'Crear cuenta'}) %>
+<section class="auth-page">
+  <div class="auth-card register-card">
+    <img src="/images/elite-soccer-logo.png" alt="Elite Soccer">
+    <span class="eyebrow">ÚNETE AL CLUB</span>
+    <h1>Crear cuenta</h1>
+    <p class="muted center">Regístrate como jugador o acudiente. Tu cuenta quedará pendiente de aprobación.</p>
+    <% if(error){ %><div class="alert danger"><%= error %></div><% } %>
+    <% if(success){ %><div class="alert success"><%= success %></div><p class="center"><a class="btn full" href="/login">IR A INICIAR SESIÓN</a></p><% } else { %>
+    <form method="post" action="/registro" class="form">
+      <label>Nombre completo<input type="text" name="name" value="<%= form.name||'' %>" minlength="3" maxlength="120" autocomplete="name" required></label>
+      <label>Correo electrónico<input type="email" name="email" value="<%= form.email||'' %>" autocomplete="email" required></label>
+      <label>Tipo de cuenta<select name="role" required><option value="player" <%= form.role==='player'?'selected':'' %>>⚽ Jugador</option><option value="guardian" <%= form.role==='guardian'?'selected':'' %>>👨‍👩‍👦 Acudiente</option></select></label>
+      <label>Contraseña<input type="password" name="password" minlength="8" autocomplete="new-password" required><small class="muted">Mínimo 8 caracteres.</small></label>
+      <label>Confirmar contraseña<input type="password" name="confirm_password" minlength="8" autocomplete="new-password" required></label>
+      <button class="btn full" type="submit">CREAR CUENTA</button>
+    </form>
+    <p class="center muted">¿Ya tienes una cuenta? <a class="link-blue" href="/login">Iniciar sesión</a></p>
+    <% } %>
+  </div>
+</section>
+<%- include('../partials/footer') %>

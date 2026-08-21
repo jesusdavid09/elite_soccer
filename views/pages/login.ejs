@@ -1,0 +1,50 @@
+<%- include('../partials/header',{title:'Acceso'}) %>
+
+<section class="auth-page">
+    <div class="auth-card">
+
+        <img src="/images/elite-soccer-logo.png" alt="Elite Soccer">
+
+        <span class="eyebrow">ACCESO AL CLUB</span>
+
+        <h1>Iniciar sesión</h1>
+
+        <% if(error){ %>
+            <div class="alert danger">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <form method="post" action="/login" class="form">
+
+            <label>
+                Correo
+                <input type="email" name="email" required>
+            </label>
+
+            <label>
+                Contraseña
+                <input type="password" name="password" required>
+            </label>
+
+            <button class="btn full" type="submit">
+                ENTRAR
+            </button>
+
+        </form>
+
+        <p class="muted center">
+            ¿No tienes cuenta?
+            <a class="link-blue" href="/registro">
+                Regístrate
+            </a>
+        </p>
+
+        <p class="muted center">
+            Demo: admin@elitesoccer.local / Admin123!
+        </p>
+
+    </div>
+</section>
+
+<%- include('../partials/footer') %>
