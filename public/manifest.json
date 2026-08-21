@@ -1,1 +1,17 @@
-{"name":"Elite Soccer","short_name":"Elite Soccer","start_url":"/","display":"standalone","background_color":"#050914","theme_color":"#145CFF","icons":[{"src":"/images/elite-soccer-logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}
+{
+  "name": "Elite Soccer",
+  "short_name": "Elite Soccer",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050914",
+  "theme_color": "#145CFF",
+  "icons": [
+    {
+      "src": "/images/elite-soccer-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

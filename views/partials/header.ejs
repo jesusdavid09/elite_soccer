@@ -2,23 +2,44 @@
 <html lang="es">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <meta name="theme-color" content="#145CFF">
-    <meta name="description" content="Elite Soccer - Talento, disciplina y corazón.">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
 
-    <link rel="manifest" href="/manifest.json">
-    <link rel="stylesheet" href="/css/app.css">
+    <meta
+        name="theme-color"
+        content="#145CFF"
+    >
 
-    <title><%= title || clubName || 'Elite Soccer' %> | Elite Soccer</title>
+    <meta
+        name="description"
+        content="Elite Soccer - Talento, disciplina y corazón."
+    >
+
+    <link
+        rel="manifest"
+        href="/manifest.json"
+    >
+
+    <link
+        rel="stylesheet"
+        href="/css/app.css"
+    >
+
+    <title>
+        <%= title || clubName || 'Elite Soccer' %> | Elite Soccer
+    </title>
 </head>
 
 <body>
 
 <header class="topbar">
 
-    <!-- LOGO -->
-    <a class="brand" href="/">
+    <!-- MARCA -->
+    <a class="brand" href="/" aria-label="Elite Soccer - Inicio">
+
         <img
             src="/images/elite-soccer-logo.png"
             alt="Elite Soccer"
@@ -28,45 +49,68 @@
             ELITE<br>
             <small>SOCCER</small>
         </span>
+
     </a>
 
-    <!-- NAVEGACIÓN -->
-    <nav class="desktop-nav">
+
+    <!-- NAVEGACIÓN PRINCIPAL -->
+    <nav class="desktop-nav" aria-label="Navegación principal">
 
         <a href="/">Inicio</a>
+
         <a href="/equipo">Equipo</a>
+
         <a href="/partidos">Partidos</a>
+
         <a href="/calendario">Calendario</a>
+
         <a href="/noticias">Noticias</a>
+
         <a href="/galeria">Galería</a>
+
         <a href="/tienda">Tienda</a>
 
         <% if (user && ['admin', 'coach'].includes(user.role)) { %>
+
             <a href="/noticias/admin">CMS</a>
+
         <% } %>
 
     </nav>
 
-    <!-- ACCIONES -->
+
+    <!-- ACCIONES DEL USUARIO -->
     <div class="top-actions">
 
         <% if (user) { %>
 
-            <a class="icon" href="/notificaciones">
+            <a
+                class="icon"
+                href="/notificaciones"
+                aria-label="Notificaciones"
+            >
                 🔔 <%= unread || 0 %>
             </a>
 
-            <a class="btn small" href="/dashboard">
+            <a
+                class="btn small"
+                href="/dashboard"
+            >
                 Dashboard
             </a>
 
-            <form method="post" action="/logout">
+            <form
+                method="post"
+                action="/logout"
+            >
+
                 <button
                     class="ghost small"
                     type="submit"
                 >
                     Salir
                 </button>
+
             </form>
 
         <% } else { %>
@@ -90,5 +134,6 @@
     </div>
 
 </header>
+
 
 <main class="shell">
