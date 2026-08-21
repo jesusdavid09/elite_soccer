@@ -1,1 +1,533 @@
-<%- include('../partials/header',{title:'Nuevo partido'}) %><div class="page-head"><h1>Crear partido</h1></div><form class="panel form grid-form" method="post" action="/partidos"><label>Rival<input name="opponent" required></label><label>Competición<input name="competition"></label><label>Fecha<input type="date" name="match_date" required></label><label>Hora<input type="time" name="match_time"></label><label>Lugar<input name="location"></label><label>Local/visitante<select name="home_away"><option value="home">Local</option><option value="away">Visitante</option></select></label><label>Categoría<select name="category_id"><option value="">Sin categoría</option><%categories.forEach(c=>{%><option value="<%=c.id%>"><%=c.name%></option><%})%></select></label><label class="full-row">Notas<textarea name="notes"></textarea></label><div class="full-row"><button class="btn">Crear partido</button></div></form><%- include('../partials/footer') %>
+<%- include('../partials/header', { title: 'Nuevo partido' }) %>
+
+<div class="page-head">
+
+  <div>
+
+    <span class="eyebrow">
+      ELITE SOCCER
+    </span>
+
+    <h1>
+      Crear partido
+    </h1>
+
+    <p class="muted">
+      Define rival, fecha, hora y ubicación del partido.
+    </p>
+
+  </div>
+
+</div>
+
+
+<form
+  class="panel form grid-form"
+  method="post"
+  action="/partidos"
+  id="matchForm"
+>
+
+  <!-- ============================================================
+       INFORMACIÓN DEL PARTIDO
+  ============================================================ -->
+
+  <div class="full-row form-section">
+
+    <span class="eyebrow">
+      INFORMACIÓN DEL PARTIDO
+    </span>
+
+  </div>
+
+
+  <label>
+
+    Rival
+
+    <input
+      type="text"
+      name="opponent"
+      maxlength="160"
+      placeholder="Ej: Deportivo Armenia"
+      required
+    >
+
+  </label>
+
+
+  <label>
+
+    Competición
+
+    <input
+      type="text"
+      name="competition"
+      maxlength="120"
+      placeholder="Ej: Torneo Municipal"
+    >
+
+  </label>
+
+
+  <label>
+
+    Fecha
+
+    <input
+      type="date"
+      name="match_date"
+      required
+    >
+
+  </label>
+
+
+  <label>
+
+    Hora
+
+    <input
+      type="time"
+      name="match_time"
+    >
+
+  </label>
+
+
+  <label>
+
+    Local / Visitante
+
+    <select name="home_away">
+
+      <option value="home">
+        🏠 Local
+      </option>
+
+      <option value="away">
+        ✈️ Visitante
+      </option>
+
+    </select>
+
+  </label>
+
+
+  <label>
+
+    Categoría
+
+    <select name="category_id">
+
+      <option value="">
+        Sin categoría
+      </option>
+
+      <% categories.forEach(c => { %>
+
+        <option value="<%= c.id %>">
+          <%= c.name %>
+        </option>
+
+      <% }) %>
+
+    </select>
+
+  </label>
+
+
+  <!-- ============================================================
+       UBICACIÓN
+  ============================================================ -->
+
+  <div class="full-row form-section">
+
+    <span class="eyebrow">
+      UBICACIÓN DEL PARTIDO
+    </span>
+
+    <p class="muted">
+      Escribe el nombre de la cancha o selecciónala directamente
+      en el mapa.
+    </p>
+
+  </div>
+
+
+  <label class="full-row">
+
+    Nombre del lugar
+
+    <input
+      type="text"
+      name="location"
+      id="location"
+      maxlength="160"
+      placeholder="Ej: Cancha Alfonso López"
+    >
+
+  </label>
+
+
+  <div class="full-row">
+
+    <div
+      id="matchMap"
+      class="match-location-map"
+    ></div>
+
+  </div>
+
+
+  <div class="full-row map-actions">
+
+    <button
+      type="button"
+      class="ghost"
+      id="locateMe"
+    >
+      📍 Usar mi ubicación
+    </button>
+
+    <button
+      type="button"
+      class="ghost"
+      id="clearLocation"
+    >
+      🗑️ Limpiar ubicación
+    </button>
+
+  </div>
+
+
+  <!-- COORDENADAS -->
+
+  <input
+    type="hidden"
+    name="latitude"
+    id="latitude"
+  >
+
+  <input
+    type="hidden"
+    name="longitude"
+    id="longitude"
+  >
+
+
+  <div
+    class="full-row info-box"
+    id="mapInfo"
+  >
+
+    <strong>
+      📍 Ubicación del partido
+    </strong>
+
+    <p>
+      Haz clic en el mapa exactamente donde se encuentra
+      la cancha.
+    </p>
+
+  </div>
+
+
+  <!-- ============================================================
+       NOTAS
+  ============================================================ -->
+
+  <label class="full-row">
+
+    Notas
+
+    <textarea
+      name="notes"
+      placeholder="Información adicional del partido..."
+    ></textarea>
+
+  </label>
+
+
+  <div class="full-row">
+
+    <button
+      class="btn"
+      type="submit"
+    >
+      CREAR PARTIDO
+    </button>
+
+    <a
+      class="btn outline"
+      href="/partidos"
+    >
+      CANCELAR
+    </a>
+
+  </div>
+
+</form>
+
+
+<!-- ============================================================
+     LEAFLET
+============================================================ -->
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  crossorigin=""
+>
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  crossorigin=""
+></script>
+
+
+<script>
+
+(function () {
+
+  const mapElement =
+    document.getElementById('matchMap');
+
+  const latitudeInput =
+    document.getElementById('latitude');
+
+  const longitudeInput =
+    document.getElementById('longitude');
+
+  const locationInput =
+    document.getElementById('location');
+
+  const mapInfo =
+    document.getElementById('mapInfo');
+
+  const locateButton =
+    document.getElementById('locateMe');
+
+  const clearButton =
+    document.getElementById('clearLocation');
+
+  if (!mapElement || typeof L === 'undefined') {
+    return;
+  }
+
+
+  /*
+   * Armenia, Quindío como posición inicial.
+   * Después el administrador puede mover el mapa
+   * y seleccionar cualquier cancha.
+   */
+
+  const defaultPosition = [
+    4.5339,
+    -75.6811
+  ];
+
+
+  const map = L.map('matchMap').setView(
+    defaultPosition,
+    13
+  );
+
+
+  L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      maxZoom: 19,
+      attribution:
+        '&copy; OpenStreetMap contributors'
+    }
+  ).addTo(map);
+
+
+  let marker = null;
+
+
+  function updateLocation(lat, lng) {
+
+    latitudeInput.value =
+      Number(lat).toFixed(7);
+
+    longitudeInput.value =
+      Number(lng).toFixed(7);
+
+
+    if (marker) {
+
+      marker.setLatLng([
+        lat,
+        lng
+      ]);
+
+    } else {
+
+      marker = L.marker([
+        lat,
+        lng
+      ]).addTo(map);
+
+    }
+
+
+    marker.bindPopup(
+      '<strong>Ubicación del partido</strong>'
+    ).openPopup();
+
+
+    mapInfo.innerHTML = `
+      <strong>📍 Ubicación seleccionada</strong>
+      <p>
+        Latitud: ${Number(lat).toFixed(6)}<br>
+        Longitud: ${Number(lng).toFixed(6)}
+      </p>
+    `;
+
+  }
+
+
+  map.on(
+    'click',
+    function (event) {
+
+      updateLocation(
+        event.latlng.lat,
+        event.latlng.lng
+      );
+
+    }
+  );
+
+
+  locateButton.addEventListener(
+    'click',
+    function () {
+
+      if (!navigator.geolocation) {
+
+        alert(
+          'Tu navegador no permite obtener la ubicación.'
+        );
+
+        return;
+      }
+
+
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+
+          const lat =
+            position.coords.latitude;
+
+          const lng =
+            position.coords.longitude;
+
+
+          map.setView(
+            [lat, lng],
+            17
+          );
+
+
+          updateLocation(
+            lat,
+            lng
+          );
+
+        },
+        function () {
+
+          alert(
+            'No fue posible obtener tu ubicación.'
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+  clearButton.addEventListener(
+    'click',
+    function () {
+
+      latitudeInput.value = '';
+
+      longitudeInput.value = '';
+
+
+      if (marker) {
+
+        map.removeLayer(marker);
+
+        marker = null;
+
+      }
+
+
+      mapInfo.innerHTML = `
+        <strong>📍 Ubicación del partido</strong>
+        <p>
+          Haz clic en el mapa exactamente donde se encuentra
+          la cancha.
+        </p>
+      `;
+
+    }
+  );
+
+
+  /*
+   * Si el administrador escribe el nombre de la cancha,
+   * no intentamos adivinar las coordenadas.
+   *
+   * La ubicación exacta siempre se define haciendo clic
+   * en el mapa.
+   */
+
+  document
+    .getElementById('matchForm')
+    .addEventListener(
+      'submit',
+      function (event) {
+
+        const location =
+          locationInput.value.trim();
+
+        const latitude =
+          latitudeInput.value.trim();
+
+        const longitude =
+          longitudeInput.value.trim();
+
+
+        if (
+          location &&
+          (!latitude || !longitude)
+        ) {
+
+          const confirmed =
+            confirm(
+              'Has escrito un lugar pero no has seleccionado una ubicación en el mapa. ¿Quieres continuar sin mapa?'
+            );
+
+          if (!confirmed) {
+            event.preventDefault();
+          }
+
+        }
+
+      }
+    );
+
+
+})();
+
+</script>
+
+
+<%- include('../partials/footer') %>

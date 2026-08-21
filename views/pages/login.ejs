@@ -4,19 +4,10 @@
 
   <div class="auth-card">
 
-    <!-- ============================================================
-         LOGO
-    ============================================================ -->
-
     <img
       src="/images/elite-soccer-logo.png"
       alt="Elite Soccer"
     >
-
-
-    <!-- ============================================================
-         ENCABEZADO
-    ============================================================ -->
 
     <span class="eyebrow">
       ELITE SOCCER
@@ -30,11 +21,6 @@
       Accede a tu cuenta del club.
     </p>
 
-
-    <!-- ============================================================
-         MENSAJE DE ERROR
-    ============================================================ -->
-
     <% if (typeof error !== 'undefined' && error) { %>
 
       <div class="alert danger">
@@ -42,11 +28,6 @@
       </div>
 
     <% } %>
-
-
-    <!-- ============================================================
-         MENSAJE DE ÉXITO
-    ============================================================ -->
 
     <% if (typeof success !== 'undefined' && success) { %>
 
@@ -56,19 +37,12 @@
 
     <% } %>
 
-
-    <!-- ============================================================
-         FORMULARIO
-    ============================================================ -->
-
     <form
       method="post"
       action="/login"
       class="form"
       id="loginForm"
     >
-
-      <!-- CORREO -->
 
       <label>
 
@@ -85,9 +59,6 @@
 
       </label>
 
-
-      <!-- CONTRASEÑA -->
-
       <label>
 
         Contraseña
@@ -102,26 +73,14 @@
 
       </label>
 
-
-      <!-- RECORDAR SESIÓN -->
-
       <label
-        style="
-          flex-direction:row;
-          align-items:center;
-          gap:9px;
-          cursor:pointer;
-        "
+        class="remember-row"
       >
 
         <input
           type="checkbox"
           name="remember"
           value="true"
-          style="
-            width:auto;
-            accent-color:var(--blue);
-          "
         >
 
         <span>
@@ -130,22 +89,15 @@
 
       </label>
 
-
-      <!-- BOTÓN -->
-
       <button
         class="btn full"
         type="submit"
+        id="loginButton"
       >
         INICIAR SESIÓN
       </button>
 
     </form>
-
-
-    <!-- ============================================================
-         REGISTRO
-    ============================================================ -->
 
     <div class="register-link">
 
@@ -163,12 +115,6 @@
       </p>
 
     </div>
-
-
-    <!-- ============================================================
-         ACCESO DEMO
-         Solo se muestra si el servidor envía demoEmail/demoPassword
-    ============================================================ -->
 
     <% if (
       typeof demoEmail !== 'undefined' &&
@@ -204,47 +150,28 @@
 
 </section>
 
-
-<!-- ================================================================
-     JAVASCRIPT
-================================================================ -->
-
 <script>
 
 (function () {
 
-  const form =
-    document.getElementById('loginForm');
+  const form = document.getElementById('loginForm');
 
-  if (!form) {
+  const button = document.getElementById('loginButton');
+
+  if (!form || !button) {
     return;
   }
 
-
   form.addEventListener('submit', function () {
-
-    const button =
-      form.querySelector('button[type="submit"]');
-
-    if (!button) {
-      return;
-    }
-
-    /*
-     * Evita enviar el formulario varias veces
-     * accidentalmente.
-     */
 
     button.disabled = true;
 
-    button.textContent =
-      'INICIANDO SESIÓN...';
+    button.textContent = 'INICIANDO SESIÓN...';
 
   });
 
 })();
 
 </script>
-
 
 <%- include('../partials/footer') %>

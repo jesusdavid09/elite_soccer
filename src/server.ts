@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express';
 import session from 'express-session';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import pgSession from 'connect-pg-simple';
-import path from 'node:path';
-import fs from 'node:fs';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import multer from 'multer';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import 'dotenv/config';
@@ -48,6 +48,56 @@ const upload = multer({
 // ============================================================
 // SESSION
 // ============================================================
+
+// ============================================================
+// SUBIDA DE FOTOS DE PERFIL
+// ============================================================
+
+const profileUploadDir = path.join(process.cwd(), 'public', 'uploads', 'profiles');
+
+if (!fs.existsSync(profileUploadDir)) {
+  fs.mkdirSync(profileUploadDir, { recursive: true });
+}
+
+const profileStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => {
+    cb(null, profileUploadDir);
+    },
+
+    filename: (_req, file, cb) => {
+        const extension = path.extname(file.originalname).toLowerCase();
+
+        const filename =
+            `profile-${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`;
+
+        cb(null, filename);
+    }
+});
+
+const uploadProfile = multer({
+  storage: profileStorage,
+
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    },
+
+    fileFilter: (_req, file, cb) => {
+
+        const allowed = [
+            'image/jpeg',
+            'image/png',
+            'image/webp'
+        ];
+
+        if (!allowed.includes(file.mimetype)) {
+            return cb(
+                new Error('Solo se permiten imágenes JPG, PNG o WEBP.')
+            );
+        }
+
+        cb(null, true);
+    }
+});
 
 const PgStore = pgSession(session);
 const SESSION_MAX_AGE = 1000 * 60 * 60 * 24 * 30;
@@ -344,8 +394,14 @@ app.post('/unete', async (req, res) => {
 // ============================================================
 
 app.get('/login', (req, res) => {
-  if (req.session.user) return res.redirect('/dashboard');
-  res.render('pages/login', { error: null });
+  if (req.session.user) {
+    return res.redirect('/dashboard');
+  }
+
+  res.render('pages/login', {
+    error: null,
+    success: null
+  });
 });
 
 // ============================================================
@@ -358,16 +414,28 @@ app.get('/registro', (req, res) => {
 });
 
 app.post('/registro', async (req, res) => {
-  const name = String(req.body.name || '').trim();
-  const email = String(req.body.email || '').trim().toLowerCase();
-  const password = String(req.body.password || '');
-  const confirm = String(req.body.confirm_password || '');
-  const invitationCode = String(req.body.invitation_code || '').trim();
 
-  // 👇 SOLO 3 ROLES: player, guardian, coach
-  const role = ['player', 'guardian', 'coach'].includes(req.body.role) 
-    ? req.body.role 
-    : 'player';
+  const name =
+    String(req.body.name || '').trim();
+
+  const email =
+    String(req.body.email || '')
+      .trim()
+      .toLowerCase();
+
+  const password =
+    String(req.body.password || '');
+
+  const confirm =
+    String(req.body.confirm_password || '');
+
+  const invitationCode =
+    String(req.body.invitation_code || '').trim();
+
+  const role =
+    ['player', 'guardian', 'coach'].includes(req.body.role)
+      ? req.body.role
+      : 'player';
 
   // Datos del jugador (solo si role = player)
   const dorsalRaw = String(req.body.dorsal || '').trim();
@@ -391,30 +459,34 @@ app.post('/registro', async (req, res) => {
   };
 
   // ============================================================
-  // VALIDACIÓN DE CÓDIGO PARA ENTRENADORES
-  // ============================================================
+// VALIDACIÓN DE CÓDIGO PARA ENTRENADORES
+// ============================================================
 
-  if (role === 'coach') {
-    if (!invitationCode) {
-      return res.status(400).render('pages/register', {
-        error: 'Debes ingresar el código de invitación para registrarte como entrenador.',
-        success: null,
-        form
-      });
-    }
+if (role === 'coach') {
 
-    const validCode = await one<{ value: string }>(`
-      SELECT value FROM club_settings WHERE key = 'coach_invitation_code'
-    `);
+  if (!invitationCode) {
 
-    if (!validCode || invitationCode !== validCode.value) {
-      return res.status(403).render('pages/register', {
-        error: '❌ Código de invitación incorrecto. Verifica con el administrador.',
-        success: null,
-        form
-      });
-    }
+    return res.status(400).render('pages/register', {
+      title: 'Crear cuenta',
+      error: 'Debes ingresar el código de invitación para registrarte como entrenador.',
+      success: null,
+      form
+    });
+
   }
+
+  if (invitationCode !== 'EGS-2026-COACH') {
+
+    return res.status(403).render('pages/register', {
+      title: 'Crear cuenta',
+      error: '❌ Código de entrenador incorrecto. Verifica con el administrador.',
+      success: null,
+      form
+    });
+
+  }
+
+}
 
   // ============================================================
   // VALIDACIONES GENERALES (para todos los roles)
@@ -429,11 +501,10 @@ app.post('/registro', async (req, res) => {
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(400).render('pages/register', {
-      error: 'Introduce un correo electrónico válido.',
-      success: null,
-      form
-    });
+    return res.status(403).render('pages/login', {
+  error: 'Tu cuenta está pendiente de aprobación por parte de Elite Soccer.',
+  success: null
+});
   }
 
   if (password.length < 8) {

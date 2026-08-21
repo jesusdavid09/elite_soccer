@@ -1,1 +1,501 @@
-<%- include('../partials/header',{title:'Partido'}) %><section class="match-hero"><span><%=match.competition||'PARTIDO'%></span><h1>ELITE SOCCER <strong><%=match.elite_goals!=null?match.elite_goals:'—'%></strong> — <strong><%=match.opponent_goals!=null?match.opponent_goals:'—'%></strong> <%=match.opponent%></h1><p><%=match.match_date.toLocaleDateString('es-CO')%> · <%=String(match.match_time||'').slice(0,5)%> · <%=match.location||'—'%></p></section><%if(['admin','coach'].includes(user.role)){%><div class="panel"><h2>Resultado</h2><form class="inline-form" method="post" action="/partidos/<%=match.id%>/resultado"><input type="number" name="elite_goals" min="0" placeholder="Elite"><input type="number" name="opponent_goals" min="0" placeholder="Rival"><button class="btn">Guardar</button></form><a class="btn outline" href="/partidos/<%=match.id%>/convocatoria">Gestionar convocatoria</a></div><%}%><section class="panel"><div class="section-head"><h2>Convocados</h2></div><div class="chips"><%callups.forEach(c=>{%><span class="chip"><%=c.full_name%> · <%=c.status%><%if(user.role==='player'&&c.status==='pending'){%><form method="post" action="/convocatorias/<%=c.id%>/respuesta"><input type="hidden" name="status" value="confirmed"><button>Confirmar</button></form><%}%></span><%})%></div></section><section class="panel"><h2>Eventos</h2><div class="timeline"><%events.forEach(e=>{%><div><b><%=e.minute||'—'%>'</b> <%=e.event_type%> · <%=e.full_name||'Equipo'%></div><%})%></div></section><%- include('../partials/footer') %>
+<%- include('../partials/header', { title: 'Partido' }) %>
+
+<section class="match-hero">
+
+  <span>
+    <%= match.competition || 'PARTIDO' %>
+  </span>
+
+  <h1>
+
+    ELITE SOCCER
+
+    <strong>
+      <%= match.elite_goals != null ? match.elite_goals : '—' %>
+    </strong>
+
+    —
+
+    <strong>
+      <%= match.opponent_goals != null ? match.opponent_goals : '—' %>
+    </strong>
+
+    <%= match.opponent || 'Rival' %>
+
+  </h1>
+
+  <p>
+
+    <%= match.match_date
+      ? new Date(match.match_date).toLocaleDateString('es-CO')
+      : 'Fecha pendiente'
+    %>
+
+    ·
+
+    <%= match.match_time
+      ? String(match.match_time).slice(0, 5)
+      : 'Hora pendiente'
+    %>
+
+    ·
+
+    <%= match.location || 'Ubicación pendiente' %>
+
+  </p>
+
+</section>
+
+
+<!-- ============================================================
+     UBICACIÓN DEL PARTIDO
+============================================================ -->
+
+<%
+  const hasLocation =
+    match.latitude !== null &&
+    match.latitude !== undefined &&
+    match.longitude !== null &&
+    match.longitude !== undefined &&
+    !isNaN(Number(match.latitude)) &&
+    !isNaN(Number(match.longitude));
+%>
+
+
+<% if (hasLocation) { %>
+
+<section class="panel">
+
+  <div class="section-head">
+
+    <div>
+
+      <span class="eyebrow">
+        UBICACIÓN
+      </span>
+
+      <h2>
+        <%= match.location || 'Lugar del partido' %>
+      </h2>
+
+    </div>
+
+  </div>
+
+
+  <!-- MAPA -->
+
+  <div
+    id="matchViewMap"
+    class="match-location-map"
+    data-latitude="<%= Number(match.latitude) %>"
+    data-longitude="<%= Number(match.longitude) %>"
+    data-location="<%= match.location || 'Ubicación del partido' %>"
+  ></div>
+
+
+  <!-- ACCIONES -->
+
+  <div
+    class="actions"
+    style="margin-top:15px;"
+  >
+
+    <a
+      class="btn"
+      href="https://www.google.com/maps/dir/?api=1&destination=<%= encodeURIComponent(Number(match.latitude) + ',' + Number(match.longitude)) %>"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      🗺️ ABRIR EN GOOGLE MAPS
+    </a>
+
+  </div>
+
+</section>
+
+
+<% } else { %>
+
+
+<section class="panel">
+
+  <span class="eyebrow">
+    UBICACIÓN
+  </span>
+
+  <h2>
+    <%= match.location || 'Ubicación pendiente' %>
+  </h2>
+
+  <p class="muted">
+    El club todavía no ha registrado una ubicación exacta
+    en el mapa.
+  </p>
+
+</section>
+
+
+<% } %>
+
+
+<!-- ============================================================
+     RESULTADO / ADMINISTRACIÓN
+============================================================ -->
+
+<% if (
+  user &&
+  ['admin', 'coach'].includes(user.role)
+) { %>
+
+<section class="panel">
+
+  <h2>
+    Resultado
+  </h2>
+
+
+  <form
+    class="inline-form"
+    method="post"
+    action="/partidos/<%= match.id %>/resultado"
+  >
+
+    <input
+      type="number"
+      name="elite_goals"
+      min="0"
+      max="99"
+      placeholder="Elite"
+      value="<%= match.elite_goals != null ? match.elite_goals : '' %>"
+      required
+    >
+
+
+    <input
+      type="number"
+      name="opponent_goals"
+      min="0"
+      max="99"
+      placeholder="Rival"
+      value="<%= match.opponent_goals != null ? match.opponent_goals : '' %>"
+      required
+    >
+
+
+    <button
+      class="btn"
+      type="submit"
+    >
+      GUARDAR RESULTADO
+    </button>
+
+  </form>
+
+
+  <div
+    class="actions"
+    style="margin-top:15px;"
+  >
+
+    <a
+      class="btn outline"
+      href="/partidos/<%= match.id %>/convocatoria"
+    >
+      GESTIONAR CONVOCATORIA
+    </a>
+
+  </div>
+
+</section>
+
+<% } %>
+
+
+<!-- ============================================================
+     CONVOCADOS
+============================================================ -->
+
+<section class="panel">
+
+  <div class="section-head">
+
+    <div>
+
+      <span class="eyebrow">
+        PLANTILLA
+      </span>
+
+      <h2>
+        Convocados
+      </h2>
+
+    </div>
+
+  </div>
+
+
+  <% if (callups && callups.length) { %>
+
+    <div class="chips">
+
+      <% callups.forEach(c => { %>
+
+        <span class="chip">
+
+          <%= c.full_name %>
+
+          ·
+
+          <%= c.status %>
+
+
+          <% if (
+            user &&
+            user.role === 'player' &&
+            c.status === 'pending'
+          ) { %>
+
+            <form
+              method="post"
+              action="/convocatorias/<%= c.id %>/respuesta"
+            >
+
+              <input
+                type="hidden"
+                name="status"
+                value="confirmed"
+              >
+
+              <button
+                type="submit"
+              >
+                Confirmar
+              </button>
+
+            </form>
+
+          <% } %>
+
+        </span>
+
+      <% }) %>
+
+    </div>
+
+
+  <% } else { %>
+
+    <p class="muted">
+      Todavía no hay jugadores convocados.
+    </p>
+
+  <% } %>
+
+</section>
+
+
+<!-- ============================================================
+     EVENTOS
+============================================================ -->
+
+<section class="panel">
+
+  <span class="eyebrow">
+    DESARROLLO DEL PARTIDO
+  </span>
+
+  <h2>
+    Eventos
+  </h2>
+
+
+  <div class="timeline">
+
+    <% if (events && events.length) { %>
+
+      <% events.forEach(e => { %>
+
+        <div>
+
+          <b>
+            <%= e.minute != null ? e.minute : '—' %>'
+          </b>
+
+          <%= e.event_type || 'Evento' %>
+
+          ·
+
+          <%= e.full_name || 'Equipo' %>
+
+        </div>
+
+      <% }) %>
+
+
+    <% } else { %>
+
+      <p class="muted">
+        No hay eventos registrados.
+      </p>
+
+    <% } %>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     LEAFLET
+============================================================ -->
+
+<% if (hasLocation) { %>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  crossorigin=""
+>
+
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  crossorigin=""
+></script>
+
+
+<script>
+
+(function () {
+
+  function initializeMatchMap() {
+
+    const element =
+      document.getElementById('matchViewMap');
+
+    if (!element) {
+      return;
+    }
+
+
+    if (typeof L === 'undefined') {
+
+      console.error(
+        'Elite Soccer: Leaflet no pudo cargarse.'
+      );
+
+      return;
+
+    }
+
+
+    const latitude =
+      Number(element.dataset.latitude);
+
+    const longitude =
+      Number(element.dataset.longitude);
+
+    const locationName =
+      element.dataset.location ||
+      'Ubicación del partido';
+
+
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude)
+    ) {
+
+      console.error(
+        'Elite Soccer: coordenadas inválidas.',
+        latitude,
+        longitude
+      );
+
+      return;
+
+    }
+
+
+    const map =
+      L.map(element).setView(
+        [latitude, longitude],
+        16
+      );
+
+
+    L.tileLayer(
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {
+        maxZoom: 19,
+
+        attribution:
+          '&copy; OpenStreetMap contributors'
+      }
+    ).addTo(map);
+
+
+    const marker =
+      L.marker([
+        latitude,
+        longitude
+      ]).addTo(map);
+
+
+    marker
+      .bindPopup(
+        '<strong>' +
+        escapeHtml(locationName) +
+        '</strong>'
+      )
+      .openPopup();
+
+
+    setTimeout(function () {
+
+      map.invalidateSize();
+
+    }, 200);
+
+
+    function escapeHtml(text) {
+
+      const div =
+        document.createElement('div');
+
+      div.textContent = text;
+
+      return div.innerHTML;
+
+    }
+
+  }
+
+
+  if (
+    document.readyState === 'loading'
+  ) {
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      initializeMatchMap
+    );
+
+  } else {
+
+    initializeMatchMap();
+
+  }
+
+})();
+
+</script>
+
+<% } %>
+
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+
+<%- include('../partials/footer') %>

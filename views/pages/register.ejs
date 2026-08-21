@@ -1,23 +1,36 @@
-<%- include('../partials/header',{title:'Crear cuenta'}) %>
+<%- include('../partials/header', { title: 'Crear cuenta' }) %>
 
 <section class="auth-page">
 
   <div class="auth-card register-card">
+
+    <!-- ============================================================
+         LOGO
+    ============================================================ -->
 
     <img
       src="/images/elite-soccer-logo.png"
       alt="Elite Soccer"
     >
 
-    <span class="eyebrow">ÚNETE AL CLUB</span>
+    <span class="eyebrow">
+      ÚNETE AL CLUB
+    </span>
 
-    <h1>Crear cuenta</h1>
+    <h1>
+      Crear cuenta
+    </h1>
 
     <p class="muted center">
       Regístrate como jugador, acudiente o entrenador.
     </p>
 
-    <% if(error){ %>
+
+    <!-- ============================================================
+         ALERTAS
+    ============================================================ -->
+
+    <% if (typeof error !== 'undefined' && error) { %>
 
       <div class="alert danger">
         <%= error %>
@@ -25,7 +38,8 @@
 
     <% } %>
 
-    <% if(success){ %>
+
+    <% if (typeof success !== 'undefined' && success) { %>
 
       <div class="alert success">
         <%= success %>
@@ -44,16 +58,23 @@
 
     <% } else { %>
 
+
+      <!-- ============================================================
+           FORMULARIO
+      ============================================================ -->
+
       <form
         method="post"
         action="/registro"
         class="form"
         id="registerForm"
+        enctype="multipart/form-data"
       >
 
-        <!-- =====================================
+
+        <!-- ========================================================
              DATOS DE LA CUENTA
-        ====================================== -->
+        ======================================================== -->
 
         <div class="form-section">
 
@@ -63,6 +84,9 @@
 
         </div>
 
+
+        <!-- NOMBRE -->
+
         <label>
 
           Nombre completo
@@ -70,7 +94,7 @@
           <input
             type="text"
             name="name"
-            value="<%= form.name || '' %>"
+            value="<%= (typeof form !== 'undefined' && form.name) ? form.name : '' %>"
             minlength="3"
             maxlength="120"
             autocomplete="name"
@@ -80,6 +104,9 @@
 
         </label>
 
+
+        <!-- CORREO -->
+
         <label>
 
           Correo electrónico
@@ -87,7 +114,7 @@
           <input
             type="email"
             name="email"
-            value="<%= form.email || '' %>"
+            value="<%= (typeof form !== 'undefined' && form.email) ? form.email : '' %>"
             autocomplete="email"
             placeholder="correo@ejemplo.com"
             required
@@ -95,9 +122,8 @@
 
         </label>
 
-        <!-- =====================================
-             TIPO DE CUENTA
-        ====================================== -->
+
+        <!-- TIPO DE CUENTA -->
 
         <label>
 
@@ -111,7 +137,7 @@
 
             <option
               value="player"
-              <%= !form.role || form.role === 'player'
+              <%= (!form || !form.role || form.role === 'player')
                 ? 'selected'
                 : '' %>
             >
@@ -120,7 +146,7 @@
 
             <option
               value="guardian"
-              <%= form.role === 'guardian'
+              <%= form && form.role === 'guardian'
                 ? 'selected'
                 : '' %>
             >
@@ -129,7 +155,7 @@
 
             <option
               value="coach"
-              <%= form.role === 'coach'
+              <%= form && form.role === 'coach'
                 ? 'selected'
                 : '' %>
             >
@@ -140,57 +166,93 @@
 
         </label>
 
-        <!-- =====================================
-             MENSAJE DE APROBACIÓN
-        ====================================== -->
+
+        <!-- ========================================================
+             MENSAJE DEL TIPO DE CUENTA
+        ======================================================== -->
 
         <div
-          id="approvalMessage"
+          id="roleMessage"
           class="info-box"
-          style="display:none;"
         >
 
-          <strong>
-            ⏳ Registro pendiente
+          <strong id="roleMessageTitle">
+            ⚽ Registro de jugador
           </strong>
 
-          <p>
-            Tu cuenta quedará pendiente de aprobación
-            antes de poder ingresar al sistema.
+          <p id="roleMessageText">
+            Completa tus datos deportivos. Tu cuenta quedará
+            pendiente de aprobación por parte del club.
           </p>
 
         </div>
 
-        <!-- =====================================
-             MENSAJE ENTRENADOR
-        ====================================== -->
 
-        <div
-          id="coachMessage"
-          class="info-box"
-          style="display:none;"
-        >
+        <!-- ========================================================
+             FOTO DE PERFIL
+        ======================================================== -->
 
-          <strong>
-            📋 Cuenta de entrenador
-          </strong>
+        <div class="form-section">
 
-          <p>
-            El entrenador forma parte del equipo administrativo
-            de Elite Soccer y puede ingresar directamente
-            después de crear su cuenta.
+          <span class="eyebrow">
+            FOTO DE PERFIL
+          </span>
+
+          <p class="muted">
+            Sube una foto para identificarte dentro de Elite Soccer.
           </p>
 
         </div>
 
-        <!-- =====================================
+
+        <div class="profile-upload">
+
+          <!-- PREVISUALIZACIÓN -->
+
+          <div
+            class="profile-upload-preview"
+            id="profilePreviewContainer"
+          >
+
+            <img
+              id="profilePreview"
+              src="/images/elite-soccer-logo.png"
+              alt="Vista previa de la foto"
+            >
+
+          </div>
+
+
+          <!-- INPUT -->
+
+          <label class="upload-button">
+
+            <span>
+              📷 SELECCIONAR FOTO
+            </span>
+
+            <input
+              type="file"
+              name="profile_photo"
+              id="profile_photo"
+              accept="image/jpeg,image/png,image/webp"
+            >
+
+          </label>
+
+
+          <small class="muted center">
+            JPG, PNG o WEBP · Máximo recomendado: 5 MB
+          </small>
+
+        </div>
+
+
+        <!-- ========================================================
              DATOS DEL JUGADOR
-        ====================================== -->
+        ======================================================== -->
 
-        <div
-          id="playerFields"
-          style="display:none;"
-        >
+        <div id="playerFields">
 
           <div class="form-section">
 
@@ -199,11 +261,11 @@
             </span>
 
             <p class="muted">
-              Completa la información deportiva
-              del jugador.
+              Completa la información deportiva del jugador.
             </p>
 
           </div>
+
 
           <!-- FECHA DE NACIMIENTO -->
 
@@ -215,7 +277,7 @@
               type="date"
               name="birth_date"
               id="birth_date"
-              value="<%= form.birth_date || '' %>"
+              value="<%= (typeof form !== 'undefined' && form.birth_date) ? form.birth_date : '' %>"
             >
 
             <small class="muted">
@@ -223,6 +285,7 @@
             </small>
 
           </label>
+
 
           <!-- POSICIÓN -->
 
@@ -241,117 +304,91 @@
 
               <option
                 value="goalkeeper"
-                <%= form.position === 'goalkeeper'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'goalkeeper' ? 'selected' : '' %>
               >
                 🧤 Arquero
               </option>
 
               <option
                 value="defender"
-                <%= form.position === 'defender'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'defender' ? 'selected' : '' %>
               >
                 🛡️ Defensor
               </option>
 
               <option
                 value="right_back"
-                <%= form.position === 'right_back'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'right_back' ? 'selected' : '' %>
               >
                 Lateral derecho
               </option>
 
               <option
                 value="left_back"
-                <%= form.position === 'left_back'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'left_back' ? 'selected' : '' %>
               >
                 Lateral izquierdo
               </option>
 
               <option
                 value="defensive_midfielder"
-                <%= form.position === 'defensive_midfielder'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'defensive_midfielder' ? 'selected' : '' %>
               >
                 Medio centro defensivo
               </option>
 
               <option
                 value="central_midfielder"
-                <%= form.position === 'central_midfielder'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'central_midfielder' ? 'selected' : '' %>
               >
                 Medio centro
               </option>
 
               <option
                 value="attacking_midfielder"
-                <%= form.position === 'attacking_midfielder'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'attacking_midfielder' ? 'selected' : '' %>
               >
                 Medio centro ofensivo
               </option>
 
               <option
                 value="right_midfielder"
-                <%= form.position === 'right_midfielder'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'right_midfielder' ? 'selected' : '' %>
               >
                 Medio centro derecho
               </option>
 
               <option
                 value="left_midfielder"
-                <%= form.position === 'left_midfielder'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'left_midfielder' ? 'selected' : '' %>
               >
                 Medio centro izquierdo
               </option>
 
               <option
                 value="right_winger"
-                <%= form.position === 'right_winger'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'right_winger' ? 'selected' : '' %>
               >
                 Extremo derecho
               </option>
 
               <option
                 value="left_winger"
-                <%= form.position === 'left_winger'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'left_winger' ? 'selected' : '' %>
               >
                 Extremo izquierdo
               </option>
 
               <option
                 value="striker"
-                <%= form.position === 'striker'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'striker' ? 'selected' : '' %>
               >
                 Delantero
               </option>
 
               <option
                 value="false_nine"
-                <%= form.position === 'false_nine'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.position === 'false_nine' ? 'selected' : '' %>
               >
                 Centro / Falso nueve
               </option>
@@ -359,6 +396,7 @@
             </select>
 
           </label>
+
 
           <!-- DORSAL -->
 
@@ -370,7 +408,7 @@
               type="number"
               name="dorsal"
               id="dorsal"
-              value="<%= form.dorsal || '' %>"
+              value="<%= (typeof form !== 'undefined' && form.dorsal) ? form.dorsal : '' %>"
               min="1"
               max="99"
               placeholder="Ej: 10"
@@ -381,6 +419,7 @@
             </small>
 
           </label>
+
 
           <!-- PIE DOMINANTE -->
 
@@ -399,27 +438,21 @@
 
               <option
                 value="right"
-                <%= form.dominant_foot === 'right'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.dominant_foot === 'right' ? 'selected' : '' %>
               >
                 🦶 Derecho
               </option>
 
               <option
                 value="left"
-                <%= form.dominant_foot === 'left'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.dominant_foot === 'left' ? 'selected' : '' %>
               >
                 🦶 Izquierdo
               </option>
 
               <option
                 value="ambidextrous"
-                <%= form.dominant_foot === 'ambidextrous'
-                  ? 'selected'
-                  : '' %>
+                <%= form && form.dominant_foot === 'ambidextrous' ? 'selected' : '' %>
               >
                 🦶 Ambidiestro
               </option>
@@ -427,6 +460,7 @@
             </select>
 
           </label>
+
 
           <!-- ESTATURA Y PESO -->
 
@@ -439,7 +473,8 @@
               <input
                 type="number"
                 name="height_cm"
-                value="<%= form.height_cm || '' %>"
+                id="height_cm"
+                value="<%= (typeof form !== 'undefined' && form.height_cm) ? form.height_cm : '' %>"
                 min="50"
                 max="250"
                 step="0.1"
@@ -452,6 +487,7 @@
 
             </label>
 
+
             <label>
 
               Peso
@@ -459,7 +495,8 @@
               <input
                 type="number"
                 name="weight_kg"
-                value="<%= form.weight_kg || '' %>"
+                id="weight_kg"
+                value="<%= (typeof form !== 'undefined' && form.weight_kg) ? form.weight_kg : '' %>"
                 min="20"
                 max="250"
                 step="0.1"
@@ -474,7 +511,8 @@
 
           </div>
 
-          <!-- CATEGORÍA AUTOMÁTICA -->
+
+          <!-- CATEGORÍA -->
 
           <div class="info-box">
 
@@ -492,9 +530,10 @@
 
         </div>
 
-        <!-- =====================================
+
+        <!-- ========================================================
              SEGURIDAD
-        ====================================== -->
+        ======================================================== -->
 
         <div class="form-section">
 
@@ -503,6 +542,9 @@
           </span>
 
         </div>
+
+
+        <!-- CONTRASEÑA -->
 
         <label>
 
@@ -523,6 +565,9 @@
 
         </label>
 
+
+        <!-- CONFIRMAR -->
+
         <label>
 
           Confirmar contraseña
@@ -538,9 +583,10 @@
 
         </label>
 
-        <!-- =====================================
+
+        <!-- ========================================================
              BOTÓN
-        ====================================== -->
+        ======================================================== -->
 
         <button
           class="btn full"
@@ -550,6 +596,11 @@
         </button>
 
       </form>
+
+
+      <!-- ========================================================
+           LOGIN
+      ======================================================== -->
 
       <p class="center muted">
 
@@ -570,7 +621,14 @@
 
 </section>
 
+
+<!-- ================================================================
+     JAVASCRIPT
+================================================================ -->
+
 <script>
+
+(function () {
 
   const roleSelect =
     document.getElementById('role');
@@ -578,11 +636,11 @@
   const playerFields =
     document.getElementById('playerFields');
 
-  const approvalMessage =
-    document.getElementById('approvalMessage');
+  const roleMessageTitle =
+    document.getElementById('roleMessageTitle');
 
-  const coachMessage =
-    document.getElementById('coachMessage');
+  const roleMessageText =
+    document.getElementById('roleMessageText');
 
   const birthDate =
     document.getElementById('birth_date');
@@ -596,15 +654,31 @@
   const dominantFoot =
     document.getElementById('dominant_foot');
 
+  const heightCm =
+    document.getElementById('height_cm');
+
+  const weightKg =
+    document.getElementById('weight_kg');
+
+  const photoInput =
+    document.getElementById('profile_photo');
+
+  const photoPreview =
+    document.getElementById('profilePreview');
+
+
+  /* ================================================================
+     TIPO DE CUENTA
+  ================================================================ */
 
   function updateFields() {
 
+    if (!roleSelect) {
+      return;
+    }
+
     const role = roleSelect.value;
 
-
-    /* =========================================
-       JUGADOR
-    ========================================= */
 
     if (role === 'player') {
 
@@ -614,19 +688,19 @@
       position.required = true;
       dorsal.required = true;
       dominantFoot.required = true;
+      heightCm.required = true;
+      weightKg.required = true;
 
-      approvalMessage.style.display = 'block';
-      coachMessage.style.display = 'none';
+      roleMessageTitle.textContent =
+        '⚽ Registro de jugador';
 
-      return;
+      roleMessageText.textContent =
+        'Completa tus datos deportivos. Tu cuenta quedará pendiente de aprobación por parte del club.';
+
     }
 
 
-    /* =========================================
-       ENTRENADOR
-    ========================================= */
-
-    if (role === 'coach') {
+    else if (role === 'guardian') {
 
       playerFields.style.display = 'none';
 
@@ -634,19 +708,19 @@
       position.required = false;
       dorsal.required = false;
       dominantFoot.required = false;
+      heightCm.required = false;
+      weightKg.required = false;
 
-      approvalMessage.style.display = 'none';
-      coachMessage.style.display = 'block';
+      roleMessageTitle.textContent =
+        '👨‍👩‍👦 Registro de acudiente';
 
-      return;
+      roleMessageText.textContent =
+        'Tu cuenta quedará pendiente de aprobación por parte del club.';
+
     }
 
 
-    /* =========================================
-       ACUDIENTE
-    ========================================= */
-
-    if (role === 'guardian') {
+    else if (role === 'coach') {
 
       playerFields.style.display = 'none';
 
@@ -654,39 +728,109 @@
       position.required = false;
       dorsal.required = false;
       dominantFoot.required = false;
+      heightCm.required = false;
+      weightKg.required = false;
 
-      approvalMessage.style.display = 'block';
-      coachMessage.style.display = 'none';
+      roleMessageTitle.textContent =
+        '📋 Registro de entrenador';
 
-      return;
+      roleMessageText.textContent =
+        'Necesitas el código de entrenador proporcionado por la administración del club.';
+
     }
-
-
-    /* =========================================
-       ESTADO POR DEFECTO
-    ========================================= */
-
-    playerFields.style.display = 'none';
-
-    birthDate.required = false;
-    position.required = false;
-    dorsal.required = false;
-    dominantFoot.required = false;
-
-    approvalMessage.style.display = 'none';
-    coachMessage.style.display = 'none';
 
   }
 
 
-  roleSelect.addEventListener(
-    'change',
-    updateFields
-  );
+  if (roleSelect) {
+
+    roleSelect.addEventListener(
+      'change',
+      updateFields
+    );
+
+    updateFields();
+
+  }
 
 
-  updateFields();
+  /* ================================================================
+     PREVISUALIZACIÓN DE FOTO
+  ================================================================ */
+
+  if (photoInput && photoPreview) {
+
+    photoInput.addEventListener(
+      'change',
+      function () {
+
+        const file = this.files[0];
+
+        if (!file) {
+          return;
+        }
+
+
+        /* Validar tipo */
+
+        const allowedTypes = [
+          'image/jpeg',
+          'image/png',
+          'image/webp'
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+
+          alert(
+            'Solo puedes subir imágenes JPG, PNG o WEBP.'
+          );
+
+          this.value = '';
+
+          return;
+        }
+
+
+        /* Validar tamaño: 5 MB */
+
+        const maxSize =
+          5 * 1024 * 1024;
+
+        if (file.size > maxSize) {
+
+          alert(
+            'La imagen no puede superar los 5 MB.'
+          );
+
+          this.value = '';
+
+          return;
+        }
+
+
+        /* Crear vista previa */
+
+        const reader =
+          new FileReader();
+
+        reader.onload =
+          function (event) {
+
+            photoPreview.src =
+              event.target.result;
+
+          };
+
+        reader.readAsDataURL(file);
+
+      }
+    );
+
+  }
+
+})();
 
 </script>
+
 
 <%- include('../partials/footer') %>
