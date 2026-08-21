@@ -3,22 +3,12 @@
 -- BASE DE DATOS COMPLETA
 -- PostgreSQL
 -- ============================================================
---
--- EJECUTAR CON "RUN / EXECUTE"
--- NO USAR "EXPLAIN ANALYZE"
---
--- ============================================================
-
-
--- ============================================================
--- 1. EXTENSIONES
--- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 
 -- ============================================================
--- 2. USUARIOS
+-- 1. USUARIOS
 -- ============================================================
 
 CREATE TABLE users (
@@ -42,6 +32,15 @@ CREATE TABLE users (
 
     active BOOLEAN NOT NULL DEFAULT TRUE,
 
+    /*
+     * IMPORTANTE:
+     *
+     * Los jugadores y acudientes pueden necesitar aprobación.
+     *
+     * Los entrenadores NO necesitan aprobación.
+     * El administrador/entrenador autorizado puede crear
+     * directamente su cuenta.
+     */
     approved BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -51,7 +50,7 @@ CREATE TABLE users (
 
 
 -- ============================================================
--- 3. CATEGORÍAS
+-- 2. CATEGORÍAS
 -- ============================================================
 
 CREATE TABLE categories (
@@ -71,8 +70,6 @@ CREATE TABLE categories (
 );
 
 
--- Categorías oficiales de Elite Soccer
-
 INSERT INTO categories (
     name,
     min_age,
@@ -86,6 +83,52 @@ VALUES
     ('Sub-16', 16, 16),
     ('Sub-17', 17, 17),
     ('Sub-18', 18, 18);
+
+
+-- ============================================================
+-- 3. PERFIL DE ENTRENADORES
+-- ============================================================
+
+CREATE TABLE coaches (
+    id SERIAL PRIMARY KEY,
+
+    user_id INTEGER NOT NULL UNIQUE
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    full_name VARCHAR(160) NOT NULL,
+
+    birth_date DATE,
+
+    phone VARCHAR(40),
+
+    photo_url TEXT,
+
+    bio TEXT,
+
+    experience TEXT,
+
+    specialty VARCHAR(160),
+
+    preferred_formation VARCHAR(80),
+
+    public_contact BOOLEAN NOT NULL DEFAULT TRUE,
+
+    public_phone BOOLEAN NOT NULL DEFAULT TRUE,
+
+    public_email BOOLEAN NOT NULL DEFAULT TRUE,
+
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (
+        birth_date IS NULL
+        OR birth_date <= CURRENT_DATE
+    )
+);
 
 
 -- ============================================================
@@ -181,7 +224,7 @@ CREATE TABLE players (
 
 
 -- ============================================================
--- 5. FUNCIÓN PARA ACTUALIZAR updated_at
+-- 5. FUNCIÓN updated_at
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -211,8 +254,14 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at();
 
 
+CREATE TRIGGER trg_coaches_updated_at
+BEFORE UPDATE ON coaches
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
+
+
 -- ============================================================
--- 7. FUNCIÓN DE CATEGORÍA AUTOMÁTICA
+-- 7. CATEGORÍA AUTOMÁTICA DE JUGADORES
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION assign_player_category()
@@ -229,17 +278,11 @@ BEGIN
             YEAR FROM AGE(CURRENT_DATE, NEW.birth_date)
         )::INTEGER;
 
-
-    -- Elite Soccer acepta jugadores entre 12 y 18 años.
-
     IF player_age < 12 OR player_age > 18 THEN
-
         RAISE EXCEPTION
             'El jugador debe tener entre 12 y 18 años. Edad actual: %',
             player_age;
-
     END IF;
-
 
     SELECT id
     INTO selected_category_id
@@ -249,28 +292,18 @@ BEGIN
       AND active = TRUE
     LIMIT 1;
 
-
     IF selected_category_id IS NULL THEN
-
         RAISE EXCEPTION
             'No existe una categoría para la edad %.',
             player_age;
-
     END IF;
-
 
     NEW.category_id := selected_category_id;
 
-
     RETURN NEW;
-
 END;
 $$;
 
-
--- ============================================================
--- 8. TRIGGER DE CATEGORÍA AUTOMÁTICA
--- ============================================================
 
 CREATE TRIGGER trg_player_category
 BEFORE INSERT OR UPDATE OF birth_date
@@ -280,7 +313,7 @@ EXECUTE FUNCTION assign_player_category();
 
 
 -- ============================================================
--- 9. FUNCIÓN PARA OBTENER EDAD
+-- 8. FUNCIÓN PARA OBTENER EDAD
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION player_age(
@@ -297,7 +330,7 @@ $$;
 
 
 -- ============================================================
--- 10. ENTRENAMIENTOS
+-- 9. ENTRENAMIENTOS
 -- ============================================================
 
 CREATE TABLE trainings (
@@ -332,7 +365,7 @@ CREATE TABLE trainings (
 
 
 -- ============================================================
--- 11. EJERCICIOS DE ENTRENAMIENTO
+-- 10. EJERCICIOS
 -- ============================================================
 
 CREATE TABLE training_exercises (
@@ -359,7 +392,7 @@ CREATE TABLE training_exercises (
 
 
 -- ============================================================
--- 12. ASISTENCIAS
+-- 11. ASISTENCIAS
 -- ============================================================
 
 CREATE TABLE attendance (
@@ -394,7 +427,7 @@ CREATE TABLE attendance (
 
 
 -- ============================================================
--- 13. PARTIDOS
+-- 12. PARTIDOS
 -- ============================================================
 
 CREATE TABLE matches (
@@ -446,7 +479,7 @@ CREATE TABLE matches (
 
 
 -- ============================================================
--- 14. CONVOCATORIAS
+-- 13. CONVOCATORIAS
 -- ============================================================
 
 CREATE TABLE callups (
@@ -481,7 +514,7 @@ CREATE TABLE callups (
 
 
 -- ============================================================
--- 15. EVENTOS DE PARTIDOS
+-- 14. EVENTOS DE PARTIDO
 -- ============================================================
 
 CREATE TABLE match_events (
@@ -515,7 +548,7 @@ CREATE TABLE match_events (
 
 
 -- ============================================================
--- 16. EVALUACIONES DE JUGADORES
+-- 15. EVALUACIONES
 -- ============================================================
 
 CREATE TABLE player_evaluations (
@@ -560,7 +593,7 @@ CREATE TABLE player_evaluations (
 
 
 -- ============================================================
--- 17. TÁCTICAS
+-- 16. TÁCTICAS
 -- ============================================================
 
 CREATE TABLE tactics (
@@ -585,7 +618,7 @@ CREATE TABLE tactics (
 
 
 -- ============================================================
--- 18. TORNEOS
+-- 17. TORNEOS
 -- ============================================================
 
 CREATE TABLE tournaments (
@@ -612,7 +645,7 @@ CREATE TABLE tournaments (
 
 
 -- ============================================================
--- 19. NOTICIAS
+-- 18. NOTICIAS
 -- ============================================================
 
 CREATE TABLE news (
@@ -641,7 +674,7 @@ CREATE TABLE news (
 
 
 -- ============================================================
--- 20. ÁLBUMES DE GALERÍA
+-- 19. GALERÍA
 -- ============================================================
 
 CREATE TABLE gallery_albums (
@@ -658,10 +691,6 @@ CREATE TABLE gallery_albums (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-
--- ============================================================
--- 21. ELEMENTOS DE GALERÍA
--- ============================================================
 
 CREATE TABLE gallery_items (
     id SERIAL PRIMARY KEY,
@@ -681,7 +710,7 @@ CREATE TABLE gallery_items (
 
 
 -- ============================================================
--- 22. PRODUCTOS
+-- 20. PRODUCTOS
 -- ============================================================
 
 CREATE TABLE products (
@@ -710,7 +739,7 @@ CREATE TABLE products (
 
 
 -- ============================================================
--- 23. PEDIDOS
+-- 21. PEDIDOS
 -- ============================================================
 
 CREATE TABLE orders (
@@ -748,10 +777,6 @@ CREATE TABLE orders (
 );
 
 
--- ============================================================
--- 24. PRODUCTOS DE LOS PEDIDOS
--- ============================================================
-
 CREATE TABLE order_items (
     id SERIAL PRIMARY KEY,
 
@@ -774,7 +799,7 @@ CREATE TABLE order_items (
 
 
 -- ============================================================
--- 25. PAGOS
+-- 22. PAGOS
 -- ============================================================
 
 CREATE TABLE payments (
@@ -815,7 +840,7 @@ CREATE TABLE payments (
 
 
 -- ============================================================
--- 26. NOTIFICACIONES
+-- 23. NOTIFICACIONES
 -- ============================================================
 
 CREATE TABLE notifications (
@@ -838,7 +863,7 @@ CREATE TABLE notifications (
 
 
 -- ============================================================
--- 27. ANUNCIOS
+-- 24. ANUNCIOS
 -- ============================================================
 
 CREATE TABLE announcements (
@@ -861,7 +886,7 @@ CREATE TABLE announcements (
 
 
 -- ============================================================
--- 28. VERSIONES DEL REGLAMENTO
+-- 25. REGLAMENTO
 -- ============================================================
 
 CREATE TABLE rule_versions (
@@ -878,10 +903,6 @@ CREATE TABLE rule_versions (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-
--- ============================================================
--- 29. ACEPTACIÓN DEL REGLAMENTO
--- ============================================================
 
 CREATE TABLE rule_acceptances (
     id SERIAL PRIMARY KEY,
@@ -904,7 +925,7 @@ CREATE TABLE rule_acceptances (
 
 
 -- ============================================================
--- 30. AUDITORÍA
+-- 26. AUDITORÍA
 -- ============================================================
 
 CREATE TABLE audit_logs (
@@ -927,7 +948,7 @@ CREATE TABLE audit_logs (
 
 
 -- ============================================================
--- 31. CONFIGURACIÓN DEL CLUB
+-- 27. CONFIGURACIÓN DEL CLUB
 -- ============================================================
 
 CREATE TABLE club_settings (
@@ -938,7 +959,7 @@ CREATE TABLE club_settings (
 
 
 -- ============================================================
--- 32. SESIONES
+-- 28. SESIONES
 -- ============================================================
 
 CREATE TABLE sessions (
@@ -951,7 +972,7 @@ CREATE TABLE sessions (
 
 
 -- ============================================================
--- 33. CONFIGURACIÓN INICIAL
+-- 29. CONFIGURACIÓN INICIAL
 -- ============================================================
 
 INSERT INTO club_settings (
@@ -982,11 +1003,15 @@ VALUES
     (
         'registration_category_automatic',
         'true'
+    ),
+    (
+        'coach_registration_enabled',
+        'true'
     );
 
 
 -- ============================================================
--- 34. ÍNDICES
+-- 30. ÍNDICES
 -- ============================================================
 
 CREATE INDEX idx_users_role
@@ -997,6 +1022,13 @@ CREATE INDEX idx_users_approved
 
 CREATE INDEX idx_users_active
     ON users(active);
+
+
+CREATE INDEX idx_coaches_user_id
+    ON coaches(user_id);
+
+CREATE INDEX idx_coaches_active
+    ON coaches(active);
 
 
 CREATE INDEX idx_players_user_id
@@ -1145,7 +1177,7 @@ CREATE INDEX idx_sessions_expire
 
 
 -- ============================================================
--- 35. DORSALES ÚNICOS PARA JUGADORES ACTIVOS
+-- 31. DORSALES ÚNICOS
 -- ============================================================
 
 CREATE UNIQUE INDEX idx_players_active_dorsal
@@ -1155,7 +1187,7 @@ AND dorsal IS NOT NULL;
 
 
 -- ============================================================
--- 36. VISTA COMPLETA DE JUGADORES
+-- 32. VISTA DE JUGADORES
 -- ============================================================
 
 CREATE VIEW player_details AS
@@ -1208,13 +1240,56 @@ LEFT JOIN categories c
 
 
 -- ============================================================
--- 37. FUNCIÓN PARA ACTUALIZAR CATEGORÍAS
+-- 33. VISTA PÚBLICA DE ENTRENADORES
 -- ============================================================
---
--- Esta función puede ejecutarse desde el backend diariamente
--- para mover automáticamente a los jugadores cuando cumplan
--- años.
---
+
+CREATE VIEW coach_public_profiles AS
+
+SELECT
+
+    c.id AS coach_id,
+
+    c.user_id,
+
+    c.full_name,
+
+    c.photo_url,
+
+    c.bio,
+
+    c.experience,
+
+    c.specialty,
+
+    c.preferred_formation,
+
+    CASE
+        WHEN c.public_phone = TRUE
+        AND c.public_contact = TRUE
+        THEN c.phone
+        ELSE NULL
+    END AS phone,
+
+    CASE
+        WHEN c.public_email = TRUE
+        AND c.public_contact = TRUE
+        THEN u.email
+        ELSE NULL
+    END AS email
+
+FROM coaches c
+
+INNER JOIN users u
+    ON u.id = c.user_id
+
+WHERE c.active = TRUE
+  AND u.active = TRUE
+  AND u.role = 'coach';
+
+
+-- ============================================================
+-- 34. ACTUALIZAR CATEGORÍAS
+-- ============================================================
 
 CREATE OR REPLACE FUNCTION refresh_player_categories()
 RETURNS INTEGER
@@ -1232,9 +1307,7 @@ BEGIN
     WHERE
         player_age(p.birth_date)
         BETWEEN c.min_age AND c.max_age
-
         AND c.active = TRUE;
-
 
     GET DIAGNOSTICS affected_rows = ROW_COUNT;
 
@@ -1245,7 +1318,7 @@ $$;
 
 
 -- ============================================================
--- 38. FUNCIÓN PARA APROBAR JUGADOR
+-- 35. APROBAR JUGADOR
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION approve_player(
@@ -1263,30 +1336,21 @@ BEGIN
     FROM players
     WHERE id = p_player_id;
 
-
     IF selected_user_id IS NULL THEN
-
         RAISE EXCEPTION
             'Jugador no encontrado.';
-
     END IF;
 
-
     UPDATE players
-
     SET
         approved = TRUE,
         active = TRUE
-
     WHERE id = p_player_id;
 
-
     UPDATE users
-
     SET
         approved = TRUE,
         active = TRUE
-
     WHERE id = selected_user_id;
 
 END;
@@ -1294,7 +1358,7 @@ $$;
 
 
 -- ============================================================
--- 39. FUNCIÓN PARA DESACTIVAR JUGADOR
+-- 36. DESACTIVAR JUGADOR
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION deactivate_player(
@@ -1312,26 +1376,17 @@ BEGIN
     FROM players
     WHERE id = p_player_id;
 
-
     IF selected_user_id IS NULL THEN
-
         RAISE EXCEPTION
             'Jugador no encontrado.';
-
     END IF;
 
-
     UPDATE players
-
     SET active = FALSE
-
     WHERE id = p_player_id;
 
-
     UPDATE users
-
     SET active = FALSE
-
     WHERE id = selected_user_id;
 
 END;
@@ -1339,7 +1394,46 @@ $$;
 
 
 -- ============================================================
--- 40. FINAL
+-- 37. REGLA DE APROBACIÓN
+-- ============================================================
+
+/*
+ * Los entrenadores y administradores son cuentas de confianza.
+ *
+ * Cuando exista un usuario coach:
+ *
+ *     approved = TRUE
+ *
+ * Nunca debe aparecer como "pendiente de aprobación".
+ *
+ * Los jugadores y acudientes sí pueden quedar pendientes.
+ */
+
+CREATE OR REPLACE FUNCTION enforce_staff_approval()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+
+    IF NEW.role IN ('admin', 'coach') THEN
+        NEW.approved := TRUE;
+    END IF;
+
+    RETURN NEW;
+
+END;
+$$;
+
+
+CREATE TRIGGER trg_staff_always_approved
+BEFORE INSERT OR UPDATE OF role, approved
+ON users
+FOR EACH ROW
+EXECUTE FUNCTION enforce_staff_approval();
+
+
+-- ============================================================
+-- 38. FINAL
 -- ============================================================
 
 SELECT
