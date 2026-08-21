@@ -2,22 +2,27 @@
 <html lang="es">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <meta name="theme-color" content="#145CFF">
+    <meta name="description" content="Elite Soccer - Talento, disciplina y corazón.">
 
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/css/app.css">
 
-    <title><%= title || clubName %> | Elite Soccer</title>
+    <title><%= title || clubName || 'Elite Soccer' %> | Elite Soccer</title>
 </head>
 
 <body>
 
 <header class="topbar">
 
+    <!-- LOGO -->
     <a class="brand" href="/">
-        <img src="/images/elite-soccer-logo.png" alt="Elite Soccer">
+        <img
+            src="/images/elite-soccer-logo.png"
+            alt="Elite Soccer"
+        >
 
         <span>
             ELITE<br>
@@ -25,6 +30,7 @@
         </span>
     </a>
 
+    <!-- NAVEGACIÓN -->
     <nav class="desktop-nav">
 
         <a href="/">Inicio</a>
@@ -35,18 +41,19 @@
         <a href="/galeria">Galería</a>
         <a href="/tienda">Tienda</a>
 
-        <% if(user && ['admin','coach'].includes(user.role)){ %>
+        <% if (user && ['admin', 'coach'].includes(user.role)) { %>
             <a href="/noticias/admin">CMS</a>
         <% } %>
 
     </nav>
 
+    <!-- ACCIONES -->
     <div class="top-actions">
 
-        <% if(user){ %>
+        <% if (user) { %>
 
             <a class="icon" href="/notificaciones">
-                🔔 <%= unread %>
+                🔔 <%= unread || 0 %>
             </a>
 
             <a class="btn small" href="/dashboard">
@@ -54,18 +61,27 @@
             </a>
 
             <form method="post" action="/logout">
-                <button class="ghost small" type="submit">
+                <button
+                    class="ghost small"
+                    type="submit"
+                >
                     Salir
                 </button>
             </form>
 
         <% } else { %>
 
-            <a class="ghost small" href="/registro">
+            <a
+                class="ghost small"
+                href="/registro"
+            >
                 Registrarse
             </a>
 
-            <a class="btn small" href="/login">
+            <a
+                class="btn small"
+                href="/login"
+            >
                 Iniciar sesión
             </a>
 

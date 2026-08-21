@@ -1,1 +1,281 @@
-<%- include('../partials/header',{title:'Inicio'}) %><section class="hero"><div class="hero-bg"></div><div class="hero-content"><span class="eyebrow">CLUB DE FÚTBOL</span><h1>ELITE<br><em>SOCCER</em></h1><p>Talento. Disciplina. Corazón.</p><div class="actions"><a class="btn" href="/equipo">Conoce el equipo</a><a class="btn outline" href="/unete">Únete a Elite Soccer</a></div></div></section><section class="section"><div class="section-head"><div><span class="eyebrow">COMPETICIÓN</span><h2>Próximos partidos</h2></div><a href="/partidos">Ver todos →</a></div><div class="grid cards"><% matches.forEach(m=>{ %><article class="card match"><span><%= m.competition||'Partido' %></span><h3>ELITE SOCCER <b>VS</b> <%= m.opponent %></h3><p><%= m.match_date.toLocaleDateString('es-CO') %> · <%= String(m.match_time||'').slice(0,5) %> · <%= m.location||'Por confirmar' %></p></article><% }) %></div></section><section class="section"><div class="section-head"><h2>Jugadores destacados</h2><a href="/equipo">Plantilla →</a></div><div class="grid players"><% players.forEach(p=>{ %><a class="player-card" href="/jugadores/<%=p.id%>"><div class="player-photo"><% if(p.photo_url){ %><img src="<%=p.photo_url%>"><% }else{ %><span><%=p.dorsal||'—'%></span><% } %></div><div><strong><%=p.full_name%></strong><small>#<%=p.dorsal||'—'%> · <%=p.position||'Jugador'%></small></div></a><% }) %></div></section><section class="section news-strip"><div class="section-head"><h2>Últimas noticias</h2><a href="/noticias">Noticias →</a></div><div class="grid cards"><% news.forEach(n=>{ %><a class="card" href="/noticias/<%=n.slug%>"><small>NOTICIA</small><h3><%=n.title%></h3><p><%=n.excerpt||''%></p></a><% }) %></div></section><%- include('../partials/footer') %>
+<%- include('../partials/header', { title: 'Inicio' }) %>
+
+<section class="hero">
+
+    <div class="hero-bg"></div>
+
+    <div class="hero-content">
+
+        <span class="eyebrow">
+            CLUB DE FÚTBOL
+        </span>
+
+        <h1>
+            ELITE<br>
+            <em>SOCCER</em>
+        </h1>
+
+        <p>
+            Talento. Disciplina. Corazón.
+        </p>
+
+        <div class="actions">
+
+            <a
+                class="btn"
+                href="/equipo"
+            >
+                Conoce el equipo
+            </a>
+
+            <a
+                class="btn outline"
+                href="/unete"
+            >
+                Únete a Elite Soccer
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- PRÓXIMOS PARTIDOS -->
+
+<section class="section">
+
+    <div class="section-head">
+
+        <div>
+            <span class="eyebrow">
+                COMPETICIÓN
+            </span>
+
+            <h2>
+                Próximos partidos
+            </h2>
+        </div>
+
+        <a href="/partidos">
+            Ver todos →
+        </a>
+
+    </div>
+
+    <div class="grid cards">
+
+        <% if (matches && matches.length) { %>
+
+            <% matches.forEach(m => { %>
+
+                <article class="card match">
+
+                    <span>
+                        <%= m.competition || 'Partido' %>
+                    </span>
+
+                    <h3>
+                        ELITE SOCCER
+                        <b>VS</b>
+                        <%= m.opponent %>
+                    </h3>
+
+                    <p>
+                        <%= m.match_date
+                            ? m.match_date.toLocaleDateString('es-CO')
+                            : 'Fecha por confirmar'
+                        %>
+
+                        ·
+
+                        <%= m.match_time
+                            ? String(m.match_time).slice(0, 5)
+                            : 'Hora por confirmar'
+                        %>
+
+                        ·
+
+                        <%= m.location || 'Por confirmar' %>
+                    </p>
+
+                </article>
+
+            <% }) %>
+
+        <% } else { %>
+
+            <div class="empty">
+
+                <div class="skull">
+                    ⚽
+                </div>
+
+                <h3>
+                    No hay partidos próximos
+                </h3>
+
+                <p class="muted">
+                    Cuando se programe un partido aparecerá aquí.
+                </p>
+
+            </div>
+
+        <% } %>
+
+    </div>
+
+</section>
+
+
+<!-- JUGADORES -->
+
+<section class="section">
+
+    <div class="section-head">
+
+        <h2>
+            Jugadores destacados
+        </h2>
+
+        <a href="/equipo">
+            Plantilla →
+        </a>
+
+    </div>
+
+    <div class="grid players">
+
+        <% if (players && players.length) { %>
+
+            <% players.forEach(p => { %>
+
+                <a
+                    class="player-card"
+                    href="/jugadores/<%= p.id %>"
+                >
+
+                    <div class="player-photo">
+
+                        <% if (p.photo_url) { %>
+
+                            <img
+                                src="<%= p.photo_url %>"
+                                alt="<%= p.full_name %>"
+                            >
+
+                        <% } else { %>
+
+                            <span>
+                                <%= p.dorsal || '—' %>
+                            </span>
+
+                        <% } %>
+
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            <%= p.full_name %>
+                        </strong>
+
+                        <small>
+                            #<%= p.dorsal || '—' %>
+                            ·
+                            <%= p.position || 'Jugador' %>
+                        </small>
+
+                    </div>
+
+                </a>
+
+            <% }) %>
+
+        <% } else { %>
+
+            <div class="empty">
+
+                <h3>
+                    No hay jugadores registrados
+                </h3>
+
+                <p class="muted">
+                    La plantilla aparecerá aquí cuando haya jugadores activos.
+                </p>
+
+            </div>
+
+        <% } %>
+
+    </div>
+
+</section>
+
+
+<!-- NOTICIAS -->
+
+<section class="section news-strip">
+
+    <div class="section-head">
+
+        <h2>
+            Últimas noticias
+        </h2>
+
+        <a href="/noticias">
+            Noticias →
+        </a>
+
+    </div>
+
+    <div class="grid cards">
+
+        <% if (news && news.length) { %>
+
+            <% news.forEach(n => { %>
+
+                <a
+                    class="card"
+                    href="/noticias/<%= n.slug %>"
+                >
+
+                    <small>
+                        NOTICIA
+                    </small>
+
+                    <h3>
+                        <%= n.title %>
+                    </h3>
+
+                    <p>
+                        <%= n.excerpt || '' %>
+                    </p>
+
+                </a>
+
+            <% }) %>
+
+        <% } else { %>
+
+            <div class="empty">
+
+                <h3>
+                    No hay noticias todavía
+                </h3>
+
+                <p class="muted">
+                    Las últimas noticias de Elite Soccer aparecerán aquí.
+                </p>
+
+            </div>
+
+        <% } %>
+
+    </div>
+
+</section>
+
+
+<%- include('../partials/footer') %>
