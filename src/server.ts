@@ -437,7 +437,16 @@ app.get('/registro', (req, res) => {
 
 app.post(
   '/registro',
-  uploadProfile.single('profile_photo'),
+  uploadProfile.fields([
+    {
+      name: 'profile_photo',
+      maxCount: 1
+    },
+    {
+      name: 'coach_photo',
+      maxCount: 1
+    }
+  ]),
   async (req, res) => {
 
     try {
@@ -519,10 +528,20 @@ app.post(
       // FOTO
       // ==========================================================
 
-      const profilePhoto =
-        req.file
-          ? `/uploads/profiles/${req.file.filename}`
-          : null;
+      const files = req.files as {
+  [fieldname: string]: Express.Multer.File[];
+} | undefined;
+
+const profileFile = files?.profile_photo?.[0] || null;
+const coachFile = files?.coach_photo?.[0] || null;
+
+const profilePhoto = profileFile
+  ? `/uploads/profiles/${profileFile.filename}`
+  : null;
+
+const coachPhoto = coachFile
+  ? `/uploads/profiles/${coachFile.filename}`
+  : null;
 
 
       // ==========================================================
@@ -1228,36 +1247,36 @@ app.post(
 
 
       // ==========================================================
-      // CREAR ENTRENADOR
-      // ==========================================================
+// CREAR ENTRENADOR
+// ==========================================================
 
-      if (role === 'coach') {
+if (role === 'coach') {
 
-        await q(
-          `
-          INSERT INTO coaches
-          (
-            user_id,
-            full_name,
-            photo_url,
-            active
-          )
-          VALUES
-          (
-            $1,
-            $2,
-            $3,
-            true
-          )
-          `,
-          [
-            u.id,
-            name,
-            profilePhoto
-          ]
-        );
+  await q(
+    `
+    INSERT INTO coaches
+    (
+      user_id,
+      full_name,
+      photo_url,
+      active
+    )
+    VALUES
+    (
+      $1,
+      $2,
+      $3,
+      true
+    )
+    `,
+    [
+      u.id,
+      name,
+      coachPhoto
+    ]
+  );
 
-      }
+}
 
 
       // ==========================================================
@@ -1506,13 +1525,22 @@ app.post(
       // BORRAR FOTO SI FALLÓ EL REGISTRO
       // ----------------------------------------------------------
 
-      if (req.file) {
+      const files = req.files as {
+  [fieldname: string]: Express.Multer.File[];
+} | undefined;
 
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch {}
+const uploadedFiles = [
+  ...(files?.profile_photo || []),
+  ...(files?.coach_photo || [])
+];
 
-      }
+for (const file of uploadedFiles) {
+  try {
+    if (fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
+  } catch {}
+}
 
 
       return res.status(500).render(
@@ -1591,14 +1619,21 @@ app.post('/login', async (req, res) => {
     const password = String(req.body.password || '');
 
     const u = await one<any>(
-      `
-      SELECT id, name, email, password_hash, role, status, approved, active
-      FROM users
-      WHERE lower(email) = lower($1)
-      LIMIT 1
-      `,
-      [email]
-    );
+  `
+  SELECT
+    id,
+    name,
+    email,
+    password_hash,
+    role,
+    approved,
+    active
+  FROM users
+  WHERE lower(email) = lower($1)
+  LIMIT 1
+  `,
+  [email]
+);
 
     if (!u || !u.active || !(await bcrypt.compare(password, u.password_hash))) {
       return res.status(401).render('pages/login', {
@@ -1621,12 +1656,12 @@ app.post('/login', async (req, res) => {
       }
 
       req.session.user = {
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        status: u.status
-      };
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    status: u.approved ? 'approved' : 'pending'
+};
       req.session.cookie.maxAge = SESSION_MAX_AGE;
 
       await audit(u.id, 'Inicio de sesión', 'user', u.id);
