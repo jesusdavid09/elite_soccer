@@ -1,6 +1,7 @@
 <%- include('../partials/header',{title:'Crear cuenta'}) %>
 
 <section class="auth-page">
+
   <div class="auth-card register-card">
 
     <img
@@ -17,11 +18,15 @@
       Tu cuenta quedará pendiente de aprobación.
     </p>
 
+
     <% if(error){ %>
+
       <div class="alert danger">
         <%= error %>
       </div>
+
     <% } %>
+
 
     <% if(success){ %>
 
@@ -30,24 +35,42 @@
       </div>
 
       <p class="center">
-        <a class="btn full" href="/login">
+
+        <a
+          class="btn full"
+          href="/login"
+        >
           IR A INICIAR SESIÓN
         </a>
+
       </p>
 
     <% } else { %>
 
-      <form method="post" action="/registro" class="form" id="registerForm">
 
-        <!-- ==========================================
+      <form
+        method="post"
+        action="/registro"
+        class="form"
+        id="registerForm"
+      >
+
+
+        <!-- =====================================
              DATOS DE LA CUENTA
-        =========================================== -->
+        ====================================== -->
 
         <div class="form-section">
-          <span class="eyebrow">DATOS DE LA CUENTA</span>
+
+          <span class="eyebrow">
+            DATOS DE LA CUENTA
+          </span>
+
         </div>
 
+
         <label>
+
           Nombre completo
 
           <input
@@ -60,10 +83,12 @@
             placeholder="Ej: Jesús David Riera"
             required
           >
+
         </label>
 
 
         <label>
+
           Correo electrónico
 
           <input
@@ -74,49 +99,70 @@
             placeholder="correo@ejemplo.com"
             required
           >
+
         </label>
 
 
         <label>
+
           Tipo de cuenta
 
-          <select name="role" id="role" required>
+          <select
+            name="role"
+            id="role"
+            required
+          >
 
             <option
               value="player"
-              <%= form.role === 'player' || !form.role ? 'selected' : '' %>
+              <%= !form.role || form.role === 'player'
+                ? 'selected'
+                : '' %>
             >
               ⚽ Jugador
             </option>
 
             <option
               value="guardian"
-              <%= form.role === 'guardian' ? 'selected' : '' %>
+              <%= form.role === 'guardian'
+                ? 'selected'
+                : '' %>
             >
               👨‍👩‍👦 Acudiente
             </option>
 
           </select>
+
         </label>
 
 
-        <!-- ==========================================
+
+        <!-- =====================================
              DATOS DEL JUGADOR
-        =========================================== -->
+        ====================================== -->
 
         <div id="playerFields">
 
+
           <div class="form-section">
-            <span class="eyebrow">DATOS DEL JUGADOR</span>
+
+            <span class="eyebrow">
+              DATOS DEL JUGADOR
+            </span>
 
             <p class="muted">
-              Estos datos nos ayudarán a crear correctamente
-              tu perfil deportivo.
+              Completa la información deportiva
+              del jugador.
             </p>
+
           </div>
 
 
+
+          <!-- FECHA DE NACIMIENTO -->
+
           <label>
+
             Fecha de nacimiento
 
             <input
@@ -127,117 +173,185 @@
             >
 
             <small class="muted">
-              Elite Soccer acepta jugadores entre 12 y 18 años.
+              Debes tener entre 12 y 18 años.
             </small>
+
           </label>
 
 
+
+          <!-- POSICIÓN -->
+
           <label>
+
             Posición
 
-            <select name="position" id="position">
+            <select
+              name="position"
+              id="position"
+            >
 
-              <option value="">Selecciona tu posición</option>
+              <option value="">
+                Selecciona tu posición
+              </option>
 
               <option
                 value="goalkeeper"
-                <%= form.position === 'goalkeeper' ? 'selected' : '' %>
+                <%= form.position === 'goalkeeper'
+                  ? 'selected'
+                  : '' %>
               >
                 🧤 Arquero
               </option>
 
               <option
                 value="defender"
-                <%= form.position === 'defender' ? 'selected' : '' %>
+                <%= form.position === 'defender'
+                  ? 'selected'
+                  : '' %>
               >
                 🛡️ Defensor
               </option>
 
               <option
                 value="right_back"
-                <%= form.position === 'right_back' ? 'selected' : '' %>
+                <%= form.position === 'right_back'
+                  ? 'selected'
+                  : '' %>
               >
                 Lateral derecho
               </option>
 
               <option
                 value="left_back"
-                <%= form.position === 'left_back' ? 'selected' : '' %>
+                <%= form.position === 'left_back'
+                  ? 'selected'
+                  : '' %>
               >
                 Lateral izquierdo
               </option>
 
               <option
                 value="defensive_midfielder"
-                <%= form.position === 'defensive_midfielder' ? 'selected' : '' %>
+                <%= form.position === 'defensive_midfielder'
+                  ? 'selected'
+                  : '' %>
               >
                 Medio centro defensivo
               </option>
 
               <option
                 value="central_midfielder"
-                <%= form.position === 'central_midfielder' ? 'selected' : '' %>
+                <%= form.position === 'central_midfielder'
+                  ? 'selected'
+                  : '' %>
               >
                 Medio centro
               </option>
 
               <option
                 value="attacking_midfielder"
-                <%= form.position === 'attacking_midfielder' ? 'selected' : '' %>
+                <%= form.position === 'attacking_midfielder'
+                  ? 'selected'
+                  : '' %>
               >
                 Medio centro ofensivo
               </option>
 
               <option
                 value="right_midfielder"
-                <%= form.position === 'right_midfielder' ? 'selected' : '' %>
+                <%= form.position === 'right_midfielder'
+                  ? 'selected'
+                  : '' %>
               >
                 Medio centro derecho
               </option>
 
               <option
                 value="left_midfielder"
-                <%= form.position === 'left_midfielder' ? 'selected' : '' %>
+                <%= form.position === 'left_midfielder'
+                  ? 'selected'
+                  : '' %>
               >
                 Medio centro izquierdo
               </option>
 
               <option
                 value="right_winger"
-                <%= form.position === 'right_winger' ? 'selected' : '' %>
+                <%= form.position === 'right_winger'
+                  ? 'selected'
+                  : '' %>
               >
                 Extremo derecho
               </option>
 
               <option
                 value="left_winger"
-                <%= form.position === 'left_winger' ? 'selected' : '' %>
+                <%= form.position === 'left_winger'
+                  ? 'selected'
+                  : '' %>
               >
                 Extremo izquierdo
               </option>
 
               <option
                 value="striker"
-                <%= form.position === 'striker' ? 'selected' : '' %>
+                <%= form.position === 'striker'
+                  ? 'selected'
+                  : '' %>
               >
                 Delantero
               </option>
 
               <option
                 value="false_nine"
-                <%= form.position === 'false_nine' ? 'selected' : '' %>
+                <%= form.position === 'false_nine'
+                  ? 'selected'
+                  : '' %>
               >
                 Centro / Falso nueve
               </option>
 
             </select>
+
           </label>
 
 
+
+          <!-- DORSAL -->
+
           <label>
+
+            Dorsal
+
+            <input
+              type="number"
+              name="dorsal"
+              id="dorsal"
+              value="<%= form.dorsal || '' %>"
+              min="1"
+              max="99"
+              placeholder="Ej: 10"
+            >
+
+            <small class="muted">
+              Número de camiseta entre 1 y 99.
+            </small>
+
+          </label>
+
+
+
+          <!-- PIE DOMINANTE -->
+
+          <label>
+
             Pie dominante
 
-            <select name="dominant_foot" id="dominant_foot">
+            <select
+              name="dominant_foot"
+              id="dominant_foot"
+            >
 
               <option value="">
                 Selecciona tu pie dominante
@@ -245,32 +359,44 @@
 
               <option
                 value="right"
-                <%= form.dominant_foot === 'right' ? 'selected' : '' %>
+                <%= form.dominant_foot === 'right'
+                  ? 'selected'
+                  : '' %>
               >
                 🦶 Derecho
               </option>
 
               <option
                 value="left"
-                <%= form.dominant_foot === 'left' ? 'selected' : '' %>
+                <%= form.dominant_foot === 'left'
+                  ? 'selected'
+                  : '' %>
               >
                 🦶 Izquierdo
               </option>
 
               <option
                 value="ambidextrous"
-                <%= form.dominant_foot === 'ambidextrous' ? 'selected' : '' %>
+                <%= form.dominant_foot === 'ambidextrous'
+                  ? 'selected'
+                  : '' %>
               >
                 🦶 Ambidiestro
               </option>
 
             </select>
+
           </label>
 
 
+
+          <!-- ESTATURA Y PESO -->
+
           <div class="form-row">
 
+
             <label>
+
               Estatura
 
               <input
@@ -286,10 +412,12 @@
               <small class="muted">
                 Centímetros
               </small>
+
             </label>
 
 
             <label>
+
               Peso
 
               <input
@@ -305,14 +433,21 @@
               <small class="muted">
                 Kilogramos
               </small>
+
             </label>
+
 
           </div>
 
 
+
+          <!-- CATEGORÍA AUTOMÁTICA -->
+
           <div class="info-box">
 
-            <strong>⚽ Categoría automática</strong>
+            <strong>
+              ⚽ Categoría automática
+            </strong>
 
             <p>
               No necesitas seleccionar tu categoría.
@@ -322,19 +457,26 @@
 
           </div>
 
+
         </div>
 
 
-        <!-- ==========================================
-             CONTRASEÑA
-        =========================================== -->
+
+        <!-- =====================================
+             SEGURIDAD
+        ====================================== -->
 
         <div class="form-section">
-          <span class="eyebrow">SEGURIDAD</span>
+
+          <span class="eyebrow">
+            SEGURIDAD
+          </span>
+
         </div>
 
 
         <label>
+
           Contraseña
 
           <input
@@ -349,10 +491,12 @@
           <small class="muted">
             Mínimo 8 caracteres.
           </small>
+
         </label>
 
 
         <label>
+
           Confirmar contraseña
 
           <input
@@ -363,8 +507,14 @@
             placeholder="Repite tu contraseña"
             required
           >
+
         </label>
 
+
+
+        <!-- =====================================
+             BOTÓN
+        ====================================== -->
 
         <button
           class="btn full"
@@ -373,10 +523,12 @@
           CREAR CUENTA
         </button>
 
+
       </form>
 
 
       <p class="center muted">
+
         ¿Ya tienes una cuenta?
 
         <a
@@ -385,22 +537,37 @@
         >
           Iniciar sesión
         </a>
+
       </p>
+
 
     <% } %>
 
   </div>
+
 </section>
+
 
 
 <script>
 
-  const roleSelect = document.getElementById('role');
-  const playerFields = document.getElementById('playerFields');
+  const roleSelect =
+    document.getElementById('role');
 
-  const birthDate = document.getElementById('birth_date');
-  const position = document.getElementById('position');
-  const dominantFoot = document.getElementById('dominant_foot');
+  const playerFields =
+    document.getElementById('playerFields');
+
+  const birthDate =
+    document.getElementById('birth_date');
+
+  const position =
+    document.getElementById('position');
+
+  const dorsal =
+    document.getElementById('dorsal');
+
+  const dominantFoot =
+    document.getElementById('dominant_foot');
 
 
   function updatePlayerFields() {
@@ -410,7 +577,11 @@
       playerFields.style.display = 'block';
 
       birthDate.required = true;
+
       position.required = true;
+
+      dorsal.required = true;
+
       dominantFoot.required = true;
 
     } else {
@@ -418,7 +589,11 @@
       playerFields.style.display = 'none';
 
       birthDate.required = false;
+
       position.required = false;
+
+      dorsal.required = false;
+
       dominantFoot.required = false;
 
     }
@@ -433,6 +608,7 @@
 
 
   updatePlayerFields();
+
 
 </script>
 
